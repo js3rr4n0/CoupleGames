@@ -9,6 +9,10 @@ import { fetchPokemon } from "./pokeapi";
 import { fetchRickAndMorty } from "./rickandmorty";
 import { fetchDisney } from "./disney";
 import { fetchStarWars } from "./starwars";
+import { fetchAnimeCharacters } from "./anilist";
+import { fetchDreamWorks, fetchPixar } from "./fandom";
+import { fetchSuperheroes } from "./superheroes";
+import { fetchHogwarts } from "./harrypotter";
 
 type Fetcher = (count: number) => Promise<Character[]>;
 
@@ -22,6 +26,11 @@ const FETCHERS: Record<CategoryId, Fetcher> = {
   "rick-morty": fetchRickAndMorty,
   disney: fetchDisney,
   "star-wars": fetchStarWars,
+  anime: fetchAnimeCharacters,
+  dreamworks: fetchDreamWorks,
+  pixar: fetchPixar,
+  superheroes: fetchSuperheroes,
+  "harry-potter": fetchHogwarts,
 };
 
 export { DEFAULT_CATEGORIES };

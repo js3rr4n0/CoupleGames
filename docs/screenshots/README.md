@@ -15,3 +15,4 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `08-ronda-resuelta.png` | Revelación de la ronda con puntos |
 | `09-resultados-finales.png` | Podio, historial y revancha |
 | `10-resultados-movil.png` | Resultados en móvil |
+| `11-mazos-nuevos.png` | Una carta de los mazos nuevos (anime, DreamWorks, Pixar…) |

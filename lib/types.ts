@@ -6,7 +6,12 @@ export type CategoryId =
   | "pokemon"
   | "rick-morty"
   | "disney"
-  | "star-wars";
+  | "star-wars"
+  | "anime"
+  | "dreamworks"
+  | "pixar"
+  | "superheroes"
+  | "harry-potter";
 
 export interface Character {
   id: string;

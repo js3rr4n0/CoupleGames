@@ -69,7 +69,9 @@ export default function Landing() {
     <main className="mx-auto w-full max-w-6xl px-5 pb-16 pt-6 sm:px-8">
       <header className="flex items-center justify-between gap-3">
         <Logo />
-        <Badge className="hidden sm:inline-flex">🎲 8 mazos en vivo</Badge>
+        <Badge className="hidden sm:inline-flex">
+          🎲 {CATEGORY_META.length} mazos en vivo
+        </Badge>
       </header>
 
       <section className="mt-10 grid items-start gap-8 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr]">
@@ -85,9 +87,10 @@ export default function Landing() {
           </h1>
 
           <p className="mt-5 max-w-md text-lg font-semibold text-ink-soft">
-            Te toca un personaje real sacado al momento de APIs públicas de cine,
-            series, música o libros. Todos lo ven en su pantalla. Tú no. Pregunta,
-            deduce y acierta antes de que caiga el reloj.
+            Te toca un personaje real sacado al momento de APIs públicas: cine,
+            series, anime, música, DreamWorks, Pixar, superhéroes… Todos lo ven
+            en su pantalla. Tú no. Pregunta, deduce y acierta antes de que caiga
+            el reloj.
           </p>
 
           <ul className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -188,7 +191,9 @@ export default function Landing() {
       <section className="mt-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-3xl">Ocho mazos, cero listas fijas</h2>
+            <h2 className="font-display text-3xl">
+              {CATEGORY_META.length} mazos, cero listas fijas
+            </h2>
             <p className="mt-1 max-w-xl font-semibold text-ink-soft">
               Cada partida consulta en directo estas APIs gratuitas y arma el mazo
               al azar en el servidor. No hay buscador: nadie puede espiar qué
@@ -227,8 +232,9 @@ export default function Landing() {
       <footer className="mt-16 flex flex-col items-center gap-3 text-center">
         <Logo compact />
         <p className="max-w-xl text-sm font-semibold text-ink-soft">
-          Datos de TVmaze, Deezer, Open Library, PokéAPI, Rick and Morty API,
-          Disney API y SWAPI. Todas gratuitas y sin API key.
+          Datos de TVmaze, AniList, Deezer, Open Library, DreamWorks Wiki, Pixar
+          Wiki, Disney API, Superhero API, HP-API, PokéAPI, Rick and Morty API y
+          SWAPI. Todas gratuitas y sin API key.
         </p>
       </footer>
 

@@ -2,8 +2,9 @@
 
 Juego cooperativo de adivinar personajes para **parejas y grupos pequeños**. Cada
 ronda reparte un personaje real traído **en vivo desde APIs públicas gratuitas**
-(cine, series, música, libros, Pokémon, Disney…): no hay lista fija ni buscador,
-y el jugador que adivina nunca puede ver su propia carta.
+(cine, series, anime, música, DreamWorks, Pixar, Disney, superhéroes, Harry
+Potter, libros, Pokémon…): no hay lista fija ni buscador, y el jugador que
+adivina nunca puede ver su propia carta.
 
 ![Pantalla de inicio](docs/screenshots/01-inicio.png)
 
@@ -48,7 +49,12 @@ La sorpresa se protege en el **servidor**, no en la interfaz:
 | --- | --- | --- |
 | Actores y actrices | [TVmaze](https://www.tvmaze.com/api) | Personas reales del reparto de series populares |
 | Personajes de series | [TVmaze](https://www.tvmaze.com/api) | Personajes de ficción con foto |
+| Anime y manga | [AniList](https://anilist.gitbook.io/anilist-apiv2-docs) | Los personajes más votados, con su serie y géneros |
 | Música | [Deezer](https://developers.deezer.com/api) | Artistas del top por género, con su canción más escuchada |
+| DreamWorks | [DreamWorks Wiki](https://dreamworks.fandom.com) | Shrek, Kung Fu Panda, Madagascar, Dragons… vía la API de MediaWiki |
+| Pixar | [Pixar Wiki](https://pixar.fandom.com) | Toy Story, Del revés, Cars… vía la API de MediaWiki |
+| Superhéroes | [Superhero API](https://akabab.github.io/superhero-api/) | Marvel, DC y compañía, con estadísticas y afiliaciones |
+| Harry Potter | [HP-API](https://hp-api.onrender.com) | Casa, varita, patronus y quién le pone cara |
 | Libros | [Open Library](https://openlibrary.org/developers/api) | Autores y autoras, con portada y títulos |
 | Pokémon | [PokéAPI](https://pokeapi.co) | Nombre en español, tipos y texto de la Pokédex |
 | Rick and Morty | [Rick and Morty API](https://rickandmortyapi.com) | Personajes del multiverso |
@@ -58,6 +64,12 @@ La sorpresa se protege en el **servidor**, no en la interfaz:
 Cada partida pide páginas, géneros y offsets **aleatorios**, mezcla las
 categorías en round-robin y descarta repetidos, así que dos partidas seguidas
 no comparten personajes. Si una API falla, el resto sigue alimentando el mazo.
+
+Los dos mazos de animación leen la API estándar de MediaWiki que expone cada
+wiki de Fandom: se sortea una categoría de personajes, se quedan los artículos
+más largos (la señal más fiable de que el personaje es conocido) y las pistas se
+arman con las categorías de cada ficha, comprobando contra el propio wiki qué
+categorías son películas de verdad y cuáles son solo etiquetas.
 
 ## Puntuación
 
