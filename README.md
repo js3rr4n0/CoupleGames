@@ -66,10 +66,20 @@ no comparten personajes. Si una API falla, el resto sigue alimentando el mazo.
 - Rendirse o quedarse sin tiempo: 0 puntos, y se revela el personaje.
 - El historial guarda todas las rondas de todas las partidas de la sala.
 
+## Diseño
+
+Estética de juego de mesa impreso, no de panel de control: fondo de papel con
+trama de puntos, cartas blancas con borde de tinta de 3 px y sombra dura sin
+desenfoque, botones que se hunden al pulsarlos, colores planos y saturados
+(nada de degradados ni cristal esmerilado) y tipografía Fredoka para los
+titulares. El personaje oculto se presenta como una carta boca abajo con una
+casilla vacía por letra, y las respuestas del grupo son tres teclas grandes
+pensadas para el pulgar.
+
 ## Stack
 
 - **Next.js 16** (App Router, Route Handlers, Turbopack) + **React 19** + TypeScript
-- **Tailwind CSS v4** con tokens, utilidades `glass` y animaciones propias
+- **Tailwind CSS v4** con tokens propios (`ink`, `paper`, `sun`, `tomato`…), utilidades `sheet` / `press` y animaciones de cartón
 - Estado de sesión **en memoria del servidor** (`lib/store.ts`) y sincronización
   por *polling* cada 1,2 s — sin base de datos ni servicios externos
 

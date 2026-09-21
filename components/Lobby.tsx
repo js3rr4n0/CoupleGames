@@ -65,89 +65,127 @@ export default function Lobby({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-      <Card className="animate-rise overflow-hidden">
-        <div className="relative border-b border-white/10 bg-gradient-to-br from-glow-500/25 to-candy-500/15 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
-            Código de la sala
-          </p>
-          <p className="mt-2 font-mono text-5xl font-black tracking-[0.3em] sm:text-6xl">
-            {view.code}
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button onClick={nativeShare} className="grow sm:grow-0">
-              🔗 Compartir enlace
-            </Button>
-            <Button variant="soft" onClick={() => copy("link")}>
-              {copied === "link" ? "¡Copiado!" : "Copiar link"}
-            </Button>
-            <Button variant="soft" onClick={() => copy("code")}>
-              {copied === "code" ? "¡Copiado!" : "Copiar código"}
-            </Button>
+    <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="space-y-5">
+        <Card className="animate-rise overflow-hidden p-0">
+          <div className="border-b-[3px] border-ink bg-sun px-6 py-5">
+            <p className="text-xs font-extrabold uppercase tracking-widest">
+              Código de la sala
+            </p>
+            <p className="mt-1 font-display text-5xl tracking-[0.25em] sm:text-6xl">
+              {view.code}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="plain" onClick={nativeShare}>
+                Compartir enlace
+              </Button>
+              <Button variant="plain" onClick={() => copy("link")}>
+                {copied === "link" ? "¡Copiado!" : "Copiar link"}
+              </Button>
+              <Button variant="plain" onClick={() => copy("code")}>
+                {copied === "code" ? "¡Copiado!" : "Copiar código"}
+              </Button>
+            </div>
           </div>
-          <p className="mt-3 break-all text-xs text-white/50">{shareUrl}</p>
+
+          <div className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-display text-xl">
+                En la mesa ({view.players.length}/{view.targetPlayers})
+              </h3>
+              {missing > 0 ? (
+                <Badge>Faltan {missing}</Badge>
+              ) : (
+                <Badge className="bg-grass">¡Están todos!</Badge>
+              )}
+            </div>
+
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {view.players.map((player) => (
+                <li
+                  key={player.id}
+                  className="animate-pop flex items-center gap-3 rounded-xl border-[3px] border-ink bg-paper px-3 py-2.5"
+                >
+                  <Avatar emoji={player.emoji} />
+                  <div className="min-w-0">
+                    <p className="truncate font-extrabold">
+                      {player.name}
+                      {player.id === view.you?.id && (
+                        <span className="ml-1 text-xs font-bold text-ink-soft">
+                          (tú)
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">
+                      {player.isHost ? "Anfitrión" : "Jugador"}
+                      {!player.online && " · ausente"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+              {Array.from({ length: missing }).map((_, i) => (
+                <li
+                  key={`empty-${i}`}
+                  className="flex items-center gap-3 rounded-xl border-[3px] border-dashed border-ink/35 px-3 py-2.5 text-ink-soft"
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-xl border-[3px] border-dashed border-ink/35 text-xl">
+                    ⏳
+                  </span>
+                  <p className="font-bold">Esperando…</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+
+        <Card className="p-5" tone="paper">
+          <h3 className="font-display text-lg">Cómo se juega</h3>
+          <ol className="mt-3 space-y-2 text-sm font-semibold">
+            <li className="flex gap-2">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
+                1
+              </span>
+              Por turnos alguien adivina: su personaje sale en las pantallas del
+              resto, nunca en la suya.
+            </li>
+            <li className="flex gap-2">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
+                2
+              </span>
+              Pregunta en voz alta y el grupo contesta con los botones Sí / No /
+              Quizá.
+            </li>
+            <li className="flex gap-2">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
+                3
+              </span>
+              Hasta 3 pistas por ronda, a −20 puntos cada una.
+            </li>
+            <li className="flex gap-2">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
+                4
+              </span>
+              Acertar rápido da más puntos y el resto también suma por ayudar.
+            </li>
+          </ol>
+        </Card>
+      </div>
+
+      <Card className="animate-rise overflow-hidden p-0">
+        <div className="border-b-[3px] border-ink bg-grape px-6 py-4 text-white">
+          <h3 className="font-display text-2xl">Preparar partida</h3>
+          <p className="text-sm font-semibold opacity-90">
+            {isHost
+              ? "Elige de qué mazos saldrán los personajes."
+              : `Lo decide ${view.players.find((p) => p.isHost)?.name ?? "el anfitrión"}.`}
+          </p>
         </div>
 
         <div className="p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold tracking-tight">
-              En la sala ({view.players.length}/{view.targetPlayers})
-            </h3>
-            {missing > 0 ? (
-              <Badge>Faltan {missing}</Badge>
-            ) : (
-              <Badge className="border-mint-400/30 bg-mint-400/15 text-mint-400">
-                ¡Están todos!
-              </Badge>
-            )}
-          </div>
-
-          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-            {view.players.map((player) => (
-              <li
-                key={player.id}
-                className="animate-pop flex items-center gap-3 rounded-2xl bg-white/5 p-3"
-              >
-                <Avatar emoji={player.emoji} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">
-                    {player.name}
-                    {player.id === view.you?.id && (
-                      <span className="ml-1 text-xs text-glow-300">(tú)</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-white/45">
-                    {player.isHost ? "Anfitrión" : "Jugador"} ·{" "}
-                    {player.online ? "conectado" : "ausente"}
-                  </p>
-                </div>
-              </li>
-            ))}
-            {Array.from({ length: missing }).map((_, i) => (
-              <li
-                key={`empty-${i}`}
-                className="flex items-center gap-3 rounded-2xl border border-dashed border-white/15 p-3 text-white/35"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-xl">
-                  ⏳
-                </span>
-                <p className="text-sm">Esperando…</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Card>
-
-      <div className="space-y-5">
-        <Card className="animate-rise p-6">
-          <h3 className="font-semibold tracking-tight">Configuración</h3>
-          <p className="mt-1 text-sm text-white/55">
-            {isHost
-              ? "Elige de dónde saldrán los personajes."
-              : `Lo decide ${view.players.find((p) => p.isHost)?.name ?? "el anfitrión"}.`}
+          <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+            Mazos
           </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {CATEGORY_META.map((category) => {
               const active = view.settings.categories.includes(category.id);
               return (
@@ -156,10 +194,10 @@ export default function Lobby({
                   type="button"
                   disabled={!isHost || busy}
                   onClick={() => toggleCategory(category.id)}
-                  className={`rounded-2xl border px-3 py-2 text-sm transition disabled:cursor-default ${
+                  className={`press rounded-xl border-[3px] border-ink px-3 py-2 text-sm font-extrabold disabled:cursor-default ${
                     active
-                      ? "border-glow-400/60 bg-glow-500/20 text-white"
-                      : "border-white/10 bg-white/5 text-white/55 hover:bg-white/10"
+                      ? `${category.chip} shadow-hard-sm`
+                      : "bg-white text-ink-soft opacity-60"
                   }`}
                 >
                   <span className="mr-1.5">{category.emoji}</span>
@@ -169,9 +207,9 @@ export default function Lobby({
             })}
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
                 Tiempo por ronda
               </p>
               <div className="mt-2 flex gap-2">
@@ -181,10 +219,10 @@ export default function Lobby({
                     type="button"
                     disabled={!isHost || busy}
                     onClick={() => act("settings", { roundSeconds: seconds })}
-                    className={`flex-1 rounded-xl px-2 py-2 text-sm font-semibold transition ${
+                    className={`press h-11 flex-1 rounded-lg border-[3px] border-ink font-display text-sm ${
                       view.settings.roundSeconds === seconds
-                        ? "bg-white text-night-900"
-                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-ink text-white"
+                        : "bg-white"
                     }`}
                   >
                     {seconds}s
@@ -193,7 +231,7 @@ export default function Lobby({
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
                 Rondas por jugador
               </p>
               <div className="mt-2 flex gap-2">
@@ -203,10 +241,10 @@ export default function Lobby({
                     type="button"
                     disabled={!isHost || busy}
                     onClick={() => act("settings", { roundsPerPlayer: rounds })}
-                    className={`flex-1 rounded-xl px-2 py-2 text-sm font-semibold transition ${
+                    className={`press h-11 flex-1 rounded-lg border-[3px] border-ink font-display text-sm ${
                       view.settings.roundsPerPlayer === rounds
-                        ? "bg-white text-night-900"
-                        : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-ink text-white"
+                        : "bg-white"
                     }`}
                   >
                     {rounds}
@@ -221,45 +259,22 @@ export default function Lobby({
               <Button
                 onClick={() => act("start")}
                 disabled={!canStart || busy}
-                className="w-full py-4 text-base"
+                className="w-full py-4 text-lg"
               >
                 {busy
-                  ? "Buscando personajes en las APIs…"
+                  ? "Repartiendo personajes…"
                   : canStart
-                    ? `Empezar partida · ${view.players.length * view.settings.roundsPerPlayer} rondas`
-                    : "Necesitas al menos 2 jugadores"}
+                    ? `Empezar · ${view.players.length * view.settings.roundsPerPlayer} rondas`
+                    : "Faltan jugadores"}
               </Button>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center text-sm text-white/60">
-                Esperando a que el anfitrión empiece la partida…
-              </div>
+              <p className="rounded-xl border-[3px] border-dashed border-ink/35 p-4 text-center font-bold text-ink-soft">
+                Esperando a que el anfitrión reparta…
+              </p>
             )}
           </div>
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold tracking-tight">Cómo se juega</h3>
-          <ol className="mt-3 space-y-2 text-sm text-white/60">
-            <li>
-              <span className="mr-2 text-white/40">1.</span>Por turnos, alguien
-              adivina: su personaje aparece en las pantallas del resto, nunca en
-              la suya.
-            </li>
-            <li>
-              <span className="mr-2 text-white/40">2.</span>Hace preguntas en voz
-              alta y el resto responde con los botones Sí / No / Quizá.
-            </li>
-            <li>
-              <span className="mr-2 text-white/40">3.</span>Puede gastar hasta 3
-              pistas (−20 puntos cada una) antes de arriesgar el nombre.
-            </li>
-            <li>
-              <span className="mr-2 text-white/40">4.</span>Acertar rápido da más
-              puntos y el resto del grupo también suma por ayudar.
-            </li>
-          </ol>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

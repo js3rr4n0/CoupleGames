@@ -9,6 +9,7 @@ import Lobby from "./Lobby";
 import Play from "./Play";
 import Reveal from "./Reveal";
 import { HistoryList, Scoreboard } from "./Scoreboard";
+import type { SessionView } from "@/lib/view";
 import { Avatar, Badge, Button, Card, ErrorBar, Logo } from "./ui";
 
 export default function Room({ code }: { code: string }) {
@@ -18,9 +19,9 @@ export default function Room({ code }: { code: string }) {
   if (status === "loading") {
     return (
       <main className="grid min-h-dvh place-items-center px-6">
-        <div className="animate-pulse text-center">
+        <div className="text-center">
           <Logo />
-          <p className="mt-4 text-sm text-white/50">Conectando con la sala {code}…</p>
+          <p className="mt-4 font-bold text-ink-soft">Entrando a la sala {code}…</p>
         </div>
       </main>
     );
@@ -31,10 +32,10 @@ export default function Room({ code }: { code: string }) {
       <main className="grid min-h-dvh place-items-center px-6">
         <Card className="max-w-md p-8 text-center">
           <p className="text-5xl">🕵️</p>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">
+          <h1 className="mt-4 font-display text-3xl">
             No encontramos la sala {code}
           </h1>
-          <p className="mt-2 text-sm text-white/60">
+          <p className="mt-2 font-semibold text-ink-soft">
             Puede que el código esté mal escrito o que la sala haya expirado tras
             varias horas sin actividad.
           </p>
@@ -48,7 +49,7 @@ export default function Room({ code }: { code: string }) {
 
   if (!view.you) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
+      <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
         <RoomHeader view={view} copied={copied} setCopied={setCopied} />
         <div className="mt-8">
           <JoinCard view={view} act={act} busy={busy} />
@@ -59,19 +60,27 @@ export default function Room({ code }: { code: string }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
+    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
       <RoomHeader view={view} copied={copied} setCopied={setCopied} />
 
       {view.phase !== "lobby" && view.roundsTotal > 0 && (
-        <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-glow-400 to-candy-400 transition-all duration-700"
-            style={{ width: `${(view.roundsDone / view.roundsTotal) * 100}%` }}
-          />
+        <div className="mt-4 flex gap-1.5">
+          {Array.from({ length: view.roundsTotal }).map((_, index) => (
+            <span
+              key={index}
+              className={`h-3 flex-1 rounded-full border-2 border-ink ${
+                index < view.roundsDone
+                  ? "bg-grass"
+                  : index === view.roundsDone
+                    ? "bg-sun"
+                    : "bg-white"
+              }`}
+            />
+          ))}
         </div>
       )}
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-5 space-y-5">
         {view.phase === "lobby" && <Lobby view={view} act={act} busy={busy} />}
         {view.phase === "playing" && view.round && (
           <Play view={view} act={act} busy={busy} />
@@ -88,7 +97,7 @@ export default function Room({ code }: { code: string }) {
       </div>
 
       {view.deckError && view.phase === "lobby" && (
-        <p className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
+        <p className="mt-6 rounded-xl border-[3px] border-ink bg-sun p-4 font-bold">
           {view.deckError}
         </p>
       )}
@@ -103,7 +112,7 @@ function RoomHeader({
   copied,
   setCopied,
 }: {
-  view: import("@/lib/view").SessionView;
+  view: SessionView;
   copied: boolean;
   setCopied: (value: boolean) => void;
 }) {
@@ -128,25 +137,23 @@ function RoomHeader({
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3">
-      <Link href="/" className="transition hover:opacity-80">
+      <Link href="/">
         <Logo />
       </Link>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge className="font-mono tracking-[0.2em]">{view.code}</Badge>
+        <Badge className="font-display text-sm tracking-[0.2em]">{view.code}</Badge>
         {view.phase !== "lobby" && view.roundsTotal > 0 && (
           <Badge>
             Ronda {Math.min(view.roundsDone + 1, view.roundsTotal)}/{view.roundsTotal}
           </Badge>
         )}
-        <div className="flex -space-x-2">
+        <div className="flex gap-1">
           {view.players.slice(0, 5).map((player) => (
-            <span key={player.id} className="ring-2 ring-night-950 rounded-2xl">
-              <Avatar emoji={player.emoji} size="sm" ring={player.isActor} />
-            </span>
+            <Avatar key={player.id} emoji={player.emoji} size="sm" active={player.isActor} />
           ))}
         </div>
-        <Button variant="soft" onClick={share} className="px-3 py-2 text-xs">
-          {copied ? "¡Link copiado!" : "Invitar"}
+        <Button variant="plain" onClick={share} className="px-3 py-2 text-sm">
+          {copied ? "¡Copiado!" : "Invitar"}
         </Button>
       </div>
     </header>

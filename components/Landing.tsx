@@ -8,19 +8,22 @@ import { Badge, Button, Card, ErrorBar, Logo } from "./ui";
 
 const STEPS = [
   {
-    emoji: "🪄",
+    n: "1",
+    tone: "bg-sun",
     title: "Crea la sala",
-    text: "Tu nombre, cuántos van a jugar y listo. Sin registro ni claves.",
+    text: "Tu nombre y cuántos juegan. Sin registro ni claves.",
   },
   {
-    emoji: "🔗",
-    title: "Pasa el enlace",
-    text: "Comparte el link o el código de 5 letras. Se unen desde cualquier móvil.",
+    n: "2",
+    tone: "bg-sky text-white",
+    title: "Pasa el código",
+    text: "Cinco letras o un enlace. Se unen desde cualquier móvil.",
   },
   {
-    emoji: "🕵️",
+    n: "3",
+    tone: "bg-tomato text-white",
     title: "Adivina quién eres",
-    text: "Tu personaje es secreto para ti. El resto responde sí, no o quizá.",
+    text: "Tu carta la ve todo el mundo menos tú.",
   },
 ];
 
@@ -31,10 +34,6 @@ export default function Landing() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function fillName(value: string) {
-    setName(value);
-  }
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
@@ -67,41 +66,40 @@ export default function Landing() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 pb-20 pt-8 sm:px-8">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto w-full max-w-6xl px-5 pb-16 pt-6 sm:px-8">
+      <header className="flex items-center justify-between gap-3">
         <Logo />
-        <Badge className="hidden sm:inline-flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-mint-400" />
-          APIs públicas en vivo
-        </Badge>
+        <Badge className="hidden sm:inline-flex">🎲 8 mazos en vivo</Badge>
       </header>
 
-      <section className="mt-12 grid items-start gap-10 lg:mt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+      <section className="mt-10 grid items-start gap-8 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="animate-rise">
-          <Badge className="mb-5">🎲 Juego cooperativo para dos o para el grupo</Badge>
-          <h1 className="text-balance-pretty text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-            ¿Quién{" "}
-            <span className="bg-gradient-to-r from-glow-300 via-candy-400 to-amber-300 bg-clip-text text-transparent">
-              soy
-            </span>
-            ?
+          <span className="inline-block -rotate-2 rounded-lg border-[3px] border-ink bg-white px-3 py-1 text-sm font-extrabold shadow-hard-sm">
+            Para dos o para el grupo
+          </span>
+
+          <h1 className="mt-5 font-display text-6xl leading-[0.95] sm:text-7xl lg:text-8xl">
+            ¿QUIÉN
+            <br />
+            SOY?
           </h1>
-          <p className="mt-5 max-w-lg text-balance-pretty text-lg text-white/70">
-            Cada ronda reparte un personaje real sacado al vuelo de APIs
-            públicas de cine, series, música, libros y más. Tú eres el único que
-            no puede verlo: pregunta, deduce y adivina antes de que acabe el
-            tiempo.
+
+          <p className="mt-5 max-w-md text-lg font-semibold text-ink-soft">
+            Te toca un personaje real sacado al momento de APIs públicas de cine,
+            series, música o libros. Todos lo ven en su pantalla. Tú no. Pregunta,
+            deduce y acierta antes de que caiga el reloj.
           </p>
 
           <ul className="mt-8 grid gap-3 sm:grid-cols-3">
             {STEPS.map((step) => (
-              <li
-                key={step.title}
-                className="glass rounded-2xl p-4 transition hover:-translate-y-0.5 hover:bg-white/10"
-              >
-                <span className="text-2xl">{step.emoji}</span>
-                <p className="mt-2 text-sm font-semibold">{step.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-white/60">
+              <li key={step.n} className="sheet-flat overflow-hidden">
+                <div
+                  className={`flex items-center gap-2 border-b-[3px] border-ink px-3 py-2 ${step.tone}`}
+                >
+                  <span className="font-display text-lg">{step.n}</span>
+                  <span className="text-sm font-extrabold">{step.title}</span>
+                </div>
+                <p className="px-3 py-3 text-sm font-semibold text-ink-soft">
                   {step.text}
                 </p>
               </li>
@@ -109,52 +107,52 @@ export default function Landing() {
           </ul>
         </div>
 
-        <Card className="animate-rise p-6 sm:p-8">
-          <form onSubmit={handleCreate} className="space-y-5">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Crear una sala</h2>
-              <p className="mt-1 text-sm text-white/60">
-                Se genera un enlace para invitar a quien quieras.
-              </p>
-            </div>
+        <Card className="animate-rise overflow-hidden p-0">
+          <div className="border-b-[3px] border-ink bg-grape px-6 py-4 text-white">
+            <h2 className="font-display text-2xl">Crear una sala</h2>
+            <p className="text-sm font-semibold opacity-90">
+              Te damos un código para invitar a quien quieras.
+            </p>
+          </div>
 
+          <form onSubmit={handleCreate} className="space-y-5 p-6">
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wider text-white/50">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
                 Tu nombre
               </span>
               <input
                 value={name}
-                onChange={(e) => fillName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Ana"
                 maxLength={18}
                 required
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-night-900/60 px-4 py-3 text-base outline-none transition placeholder:text-white/30 focus:border-glow-400 focus:ring-2 focus:ring-glow-500/30"
+                className="mt-2 w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-lg font-bold outline-none placeholder:font-semibold placeholder:text-ink-soft/50 focus:bg-white"
               />
             </label>
 
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-white/50">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
                 ¿Cuántos jugarán?
               </span>
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-2 flex items-stretch gap-3">
                 <button
                   type="button"
                   onClick={() => setPlayers((p) => Math.max(2, p - 1))}
-                  className="glass h-12 w-12 rounded-2xl text-xl transition hover:bg-white/15"
+                  className="press h-14 w-14 shrink-0 rounded-xl border-[3px] border-ink bg-white font-display text-2xl shadow-hard-sm"
                   aria-label="Menos jugadores"
                 >
                   −
                 </button>
-                <div className="glass flex h-12 flex-1 items-center justify-center rounded-2xl text-lg font-bold tabular-nums">
-                  {players}
-                  <span className="ml-2 text-sm font-medium text-white/50">
+                <div className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl border-[3px] border-ink bg-paper">
+                  <span className="font-display text-3xl leading-none">{players}</span>
+                  <span className="text-sm font-bold text-ink-soft">
                     {players === 2 ? "en pareja" : "jugadores"}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPlayers((p) => Math.min(12, p + 1))}
-                  className="glass h-12 w-12 rounded-2xl text-xl transition hover:bg-white/15"
+                  className="press h-14 w-14 shrink-0 rounded-xl border-[3px] border-ink bg-white font-display text-2xl shadow-hard-sm"
                   aria-label="Más jugadores"
                 >
                   +
@@ -162,71 +160,75 @@ export default function Landing() {
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full py-4 text-base">
-              {loading ? "Creando sala…" : "Crear sala y obtener enlace"}
+            <Button type="submit" disabled={loading} className="w-full py-4 text-lg">
+              {loading ? "Creando sala…" : "Crear sala ▸"}
             </Button>
           </form>
 
-          <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-widest text-white/35">
-            <span className="h-px flex-1 bg-white/10" />o únete<span className="h-px flex-1 bg-white/10" />
+          <div className="flex items-center gap-3 px-6 text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+            <span className="h-[3px] flex-1 bg-ink/15" />o entra con código
+            <span className="h-[3px] flex-1 bg-ink/15" />
           </div>
 
-          <form onSubmit={handleJoin} className="flex gap-2">
+          <form onSubmit={handleJoin} className="flex gap-2 p-6">
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="CÓDIGO"
+              placeholder="ABCDE"
               maxLength={5}
-              className="w-full rounded-2xl border border-white/10 bg-night-900/60 px-4 py-3 text-center text-lg font-bold uppercase tracking-[0.35em] outline-none transition placeholder:tracking-normal placeholder:text-white/30 focus:border-glow-400 focus:ring-2 focus:ring-glow-500/30"
+              className="w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-center font-display text-2xl uppercase tracking-[0.4em] outline-none placeholder:text-ink-soft/40 focus:bg-white"
             />
-            <Button type="submit" variant="soft" className="shrink-0">
+            <Button type="submit" variant="plain" className="shrink-0">
               Entrar
             </Button>
           </form>
         </Card>
       </section>
 
-      <section className="mt-20">
+      <section className="mt-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Personajes siempre distintos
-            </h2>
-            <p className="mt-1 max-w-xl text-sm text-white/60">
-              No hay lista fija ni buscador: cada partida consulta en directo
-              estas APIs gratuitas y el mazo se arma al azar en el servidor.
+            <h2 className="font-display text-3xl">Ocho mazos, cero listas fijas</h2>
+            <p className="mt-1 max-w-xl font-semibold text-ink-soft">
+              Cada partida consulta en directo estas APIs gratuitas y arma el mazo
+              al azar en el servidor. No hay buscador: nadie puede espiar qué
+              personajes van a salir.
             </p>
           </div>
-          <Badge>🔒 Nadie puede ver el mazo antes de jugar</Badge>
+          <Badge className="bg-sun">🔒 Sin spoilers</Badge>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {CATEGORY_META.map((category) => (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {CATEGORY_META.map((category, index) => (
             <div
               key={category.id}
-              className="glass group relative overflow-hidden rounded-2xl p-4 transition hover:-translate-y-1"
+              className="sheet-flat overflow-hidden shadow-hard-sm"
+              style={{ transform: `rotate(${index % 2 ? 0.7 : -0.7}deg)` }}
             >
               <div
-                className={`absolute inset-x-0 -top-10 h-24 bg-gradient-to-r ${category.accent} opacity-20 blur-2xl transition group-hover:opacity-40`}
-              />
-              <span className="relative text-2xl">{category.emoji}</span>
-              <p className="relative mt-2 font-semibold">{category.label}</p>
-              <p className="relative mt-1 text-xs text-white/60">
-                {category.description}
-              </p>
-              <p className="relative mt-3 text-[11px] uppercase tracking-wider text-white/35">
-                {category.source}
-              </p>
+                className={`flex items-center gap-2 border-b-[3px] border-ink px-3 py-2 ${category.chip}`}
+              >
+                <span className="text-xl">{category.emoji}</span>
+                <span className="text-sm font-extrabold">{category.label}</span>
+              </div>
+              <div className="px-3 py-3">
+                <p className="text-sm font-semibold text-ink-soft">
+                  {category.description}
+                </p>
+                <p className="mt-3 text-[11px] font-extrabold uppercase tracking-widest text-ink-soft/70">
+                  {category.source}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="mt-20 flex flex-col items-center gap-3 text-center text-xs text-white/40">
+      <footer className="mt-16 flex flex-col items-center gap-3 text-center">
         <Logo compact />
-        <p>
-          Hecho para jugar en pareja o en grupo · Datos de TVmaze, Deezer, Open
-          Library, PokéAPI, Rick and Morty API, Disney API y SWAPI
+        <p className="max-w-xl text-sm font-semibold text-ink-soft">
+          Datos de TVmaze, Deezer, Open Library, PokéAPI, Rick and Morty API,
+          Disney API y SWAPI. Todas gratuitas y sin API key.
         </p>
       </footer>
 

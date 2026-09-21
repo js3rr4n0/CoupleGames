@@ -7,10 +7,10 @@ import Poster from "./Poster";
 import { Avatar, Card } from "./ui";
 
 const STATUS_LABEL: Record<RoundResult["status"], { text: string; tone: string }> = {
-  won: { text: "Adivinado", tone: "text-emerald-300" },
-  timeout: { text: "Sin tiempo", tone: "text-amber-300" },
-  passed: { text: "Rendido", tone: "text-rose-300" },
-  live: { text: "En juego", tone: "text-white/60" },
+  won: { text: "Adivinado", tone: "bg-grass text-white" },
+  timeout: { text: "Sin tiempo", tone: "bg-sun text-ink" },
+  passed: { text: "Rendido", tone: "bg-tomato text-white" },
+  live: { text: "En juego", tone: "bg-white text-ink" },
 };
 
 export function Scoreboard({
@@ -22,51 +22,53 @@ export function Scoreboard({
   youId: string | null;
   title?: string;
 }) {
-  const ordered = [...players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-  const top = ordered[0]?.score ?? 0;
+  const ordered = [...players].sort(
+    (a, b) => b.score - a.score || a.name.localeCompare(b.name),
+  );
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold tracking-tight">{title}</h3>
-        <span className="text-xs text-white/40">{players.length} jugando</span>
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center justify-between border-b-[3px] border-ink bg-grape px-5 py-3 text-white">
+        <h3 className="font-display text-xl">{title}</h3>
+        <span className="text-xs font-extrabold uppercase tracking-widest">
+          {players.length} jugando
+        </span>
       </div>
-      <ul className="mt-4 space-y-2">
+      <ul className="space-y-2 p-4">
         {ordered.map((player, index) => (
           <li
             key={player.id}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition ${
-              player.id === youId ? "bg-glow-500/15 ring-1 ring-glow-400/40" : "bg-white/5"
+            className={`flex items-center gap-3 rounded-xl border-[3px] border-ink px-3 py-2 ${
+              player.id === youId ? "bg-sun" : "bg-paper"
             }`}
           >
-            <span className="w-4 text-center text-xs font-bold text-white/40">
+            <span className="w-4 text-center font-display text-sm text-ink-soft">
               {index + 1}
             </span>
-            <Avatar emoji={player.emoji} size="sm" ring={player.isActor} />
+            <Avatar emoji={player.emoji} size="sm" active={player.isActor} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">
+              <p className="truncate font-extrabold leading-tight">
                 {player.name}
-                {player.isHost && <span className="ml-1 text-xs text-white/40">· anfitrión</span>}
+                {player.isHost && (
+                  <span className="ml-1 text-[11px] font-bold uppercase text-ink-soft">
+                    anfitrión
+                  </span>
+                )}
               </p>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-glow-400 to-candy-400 transition-all duration-700"
-                  style={{ width: `${top > 0 ? (player.score / top) * 100 : 0}%` }}
-                />
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-soft">
+                {player.isActor ? "adivinando ahora" : player.online ? "en la mesa" : "ausente"}
+              </p>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold tabular-nums">{player.score}</p>
+              <p className="font-display text-2xl leading-none tabular-nums">
+                {player.score}
+              </p>
               {player.totalScore > 0 && (
-                <p className="text-[10px] text-white/35">
+                <p className="text-[10px] font-bold text-ink-soft">
                   total {player.totalScore + player.score}
                 </p>
               )}
             </div>
-            <span
-              className={`h-2 w-2 shrink-0 rounded-full ${player.online ? "bg-mint-400" : "bg-white/20"}`}
-              title={player.online ? "Conectado" : "Desconectado"}
-            />
           </li>
         ))}
       </ul>
@@ -75,55 +77,59 @@ export function Scoreboard({
 }
 
 export function HistoryList({ history }: { history: RoundResult[] }) {
-  if (!history.length) {
-    return (
-      <Card className="p-5">
-        <h3 className="font-semibold tracking-tight">Historial</h3>
-        <p className="mt-3 text-sm text-white/50">
-          Aquí aparecerán los personajes de cada ronda con sus puntos.
-        </p>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold tracking-tight">Historial</h3>
-        <span className="text-xs text-white/40">{history.length} rondas</span>
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center justify-between border-b-[3px] border-ink bg-sky px-5 py-3 text-white">
+        <h3 className="font-display text-xl">Historial</h3>
+        <span className="text-xs font-extrabold uppercase tracking-widest">
+          {history.length} ronda(s)
+        </span>
       </div>
-      <ul className="scroll-soft mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
-        {history.map((entry) => {
-          const meta = CATEGORY_BY_ID.get(entry.category);
-          const status = STATUS_LABEL[entry.status];
-          return (
-            <li
-              key={`${entry.gameNumber}-${entry.index}-${entry.at}`}
-              className="flex items-center gap-3 rounded-2xl bg-white/5 p-2.5"
-            >
-              <Poster
-                src={entry.image}
-                alt=""
-                emoji={meta?.emoji ?? "🎲"}
-                className="h-11 w-11 shrink-0 rounded-xl"
-                emojiClassName="text-lg"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{entry.characterName}</p>
-                <p className="truncate text-xs text-white/50">
-                  {entry.actorEmoji} {entry.actorName} · {meta?.label}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className={`text-xs font-semibold ${status.tone}`}>{status.text}</p>
-                <p className="text-xs text-white/40 tabular-nums">
-                  {entry.points > 0 ? `+${entry.points}` : "0"} pts · {entry.seconds}s
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+
+      {history.length === 0 ? (
+        <p className="p-5 font-semibold text-ink-soft">
+          Aquí se apuntan los personajes de cada ronda con sus puntos.
+        </p>
+      ) : (
+        <ul className="scroll-soft max-h-80 space-y-2 overflow-y-auto p-4">
+          {history.map((entry) => {
+            const meta = CATEGORY_BY_ID.get(entry.category);
+            const status = STATUS_LABEL[entry.status];
+            return (
+              <li
+                key={`${entry.gameNumber}-${entry.index}-${entry.at}`}
+                className="flex items-center gap-3 rounded-xl border-[3px] border-ink bg-paper p-2"
+              >
+                <Poster
+                  src={entry.image}
+                  alt=""
+                  emoji={meta?.emoji ?? "🎲"}
+                  className="h-12 w-12 shrink-0 rounded-lg"
+                  emojiClassName="text-lg"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-extrabold leading-tight">
+                    {entry.characterName}
+                  </p>
+                  <p className="truncate text-xs font-bold text-ink-soft">
+                    {entry.actorEmoji} {entry.actorName} · {meta?.label}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span
+                    className={`inline-block rounded-md border-2 border-ink px-2 py-0.5 text-[11px] font-extrabold ${status.tone}`}
+                  >
+                    {status.text}
+                  </span>
+                  <p className="mt-1 text-xs font-bold tabular-nums text-ink-soft">
+                    {entry.points > 0 ? `+${entry.points}` : "0"} pts · {entry.seconds}s
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }

@@ -6,7 +6,8 @@ export interface CategoryMeta {
   emoji: string;
   description: string;
   source: string;
-  accent: string;
+  /** Solid colour classes for the category chip: no gradients anywhere. */
+  chip: string;
 }
 
 /** Client-safe catalogue: the UI never learns which characters exist, only the themes. */
@@ -17,7 +18,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "🎬",
     description: "Caras reales del cine y la tele",
     source: "TVmaze",
-    accent: "from-rose-500 to-orange-400",
+    chip: "bg-tomato text-white",
   },
   {
     id: "personajes-series",
@@ -25,7 +26,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "📺",
     description: "Protagonistas y villanos de ficción",
     source: "TVmaze",
-    accent: "from-violet-500 to-fuchsia-400",
+    chip: "bg-grape text-white",
   },
   {
     id: "musica",
@@ -33,7 +34,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "🎧",
     description: "Artistas que suenan ahora mismo",
     source: "Deezer",
-    accent: "from-emerald-500 to-teal-400",
+    chip: "bg-grass text-white",
   },
   {
     id: "libros",
@@ -41,7 +42,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "📚",
     description: "Autores y autoras de todo el mundo",
     source: "Open Library",
-    accent: "from-amber-500 to-yellow-400",
+    chip: "bg-sun text-ink",
   },
   {
     id: "pokemon",
@@ -49,7 +50,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "⚡",
     description: "Las criaturas de la Pokédex",
     source: "PokéAPI",
-    accent: "from-yellow-400 to-amber-500",
+    chip: "bg-bubblegum text-ink",
   },
   {
     id: "rick-morty",
@@ -57,7 +58,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "🛸",
     description: "El multiverso entero",
     source: "Rick and Morty API",
-    accent: "from-lime-400 to-green-500",
+    chip: "bg-teal text-white",
   },
   {
     id: "disney",
@@ -65,7 +66,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "🏰",
     description: "Clásicos y modernos del castillo",
     source: "Disney API",
-    accent: "from-sky-500 to-blue-400",
+    chip: "bg-sky text-white",
   },
   {
     id: "star-wars",
@@ -73,7 +74,7 @@ export const CATEGORY_META: CategoryMeta[] = [
     emoji: "✨",
     description: "Una galaxia muy, muy lejana",
     source: "SWAPI",
-    accent: "from-slate-400 to-zinc-500",
+    chip: "bg-ink text-white",
   },
 ];
 

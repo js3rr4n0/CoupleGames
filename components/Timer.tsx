@@ -23,49 +23,28 @@ export function useCountdown(secondsLeft: number, active: boolean) {
   return left;
 }
 
-export function TimerRing({
-  left,
-  total,
-  size = 92,
-}: {
-  left: number;
-  total: number;
-  size?: number;
-}) {
-  const radius = size / 2 - 6;
-  const circumference = 2 * Math.PI * radius;
+export function TimerBox({ left, total }: { left: number; total: number }) {
   const ratio = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0;
   const urgent = left <= 10;
 
   return (
-    <div className="relative grid place-items-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.12)"
-          strokeWidth={6}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={urgent ? "#fb7185" : "#a78bfa"}
-          strokeWidth={6}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - ratio)}
-          style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
-        />
-      </svg>
-      <span
-        className={`absolute text-xl font-bold tabular-nums ${urgent ? "text-rose-300" : "text-white"}`}
-      >
+    <div
+      className={`w-[5.5rem] shrink-0 overflow-hidden rounded-xl border-[3px] border-ink shadow-hard-sm ${
+        urgent ? "animate-tick bg-tomato text-white" : "bg-white text-ink"
+      }`}
+    >
+      <p className="pt-1.5 text-center font-display text-4xl leading-none tabular-nums">
         {left}
-      </span>
+      </p>
+      <p className="pb-1.5 text-center text-[10px] font-extrabold uppercase tracking-widest opacity-70">
+        segundos
+      </p>
+      <div className="h-3 border-t-[3px] border-ink bg-paper-2">
+        <div
+          className={`h-full ${urgent ? "bg-tomato" : "bg-grass"}`}
+          style={{ width: `${ratio * 100}%`, transition: "width 1s linear" }}
+        />
+      </div>
     </div>
   );
 }

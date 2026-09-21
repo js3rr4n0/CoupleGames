@@ -1,16 +1,14 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "ghost" | "soft" | "danger" | "success";
+type Variant = "primary" | "plain" | "danger" | "success" | "sky" | "quiet";
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-gradient-to-r from-glow-500 to-candy-500 text-white shadow-lg shadow-glow-500/25 hover:brightness-110",
-  soft: "glass text-white/90 hover:bg-white/15",
-  ghost: "text-white/70 hover:text-white hover:bg-white/10",
-  danger:
-    "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/25 hover:brightness-110",
-  success:
-    "bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-lg shadow-emerald-500/25 hover:brightness-110",
+  primary: "bg-sun text-ink",
+  plain: "bg-white text-ink",
+  danger: "bg-tomato text-white",
+  success: "bg-grass text-white",
+  sky: "bg-sky text-white",
+  quiet: "bg-transparent text-ink border-dashed",
 };
 
 export function Button({
@@ -19,10 +17,11 @@ export function Button({
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+  const shadow = variant === "quiet" ? "" : "shadow-hard press";
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold tracking-tight transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl border-[3px] border-ink px-5 py-3 font-display text-base font-semibold disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-hard-sm ${VARIANTS[variant]} ${shadow} ${className}`}
     >
       {children}
     </button>
@@ -32,14 +31,22 @@ export function Button({
 export function Card({
   children,
   className = "",
+  tone,
 }: {
   children: ReactNode;
   className?: string;
+  tone?: "sun" | "sky" | "grape" | "grass" | "tomato" | "paper";
 }) {
+  const tones = {
+    sun: "bg-sun",
+    sky: "bg-sky",
+    grape: "bg-grape",
+    grass: "bg-grass",
+    tomato: "bg-tomato",
+    paper: "bg-paper-2",
+  };
   return (
-    <div className={`glass rounded-3xl shadow-2xl shadow-black/30 ${className}`}>
-      {children}
-    </div>
+    <div className={`sheet ${tone ? tones[tone] : ""} ${className}`}>{children}</div>
   );
 }
 
@@ -52,7 +59,9 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/80 ${className}`}
+      // text-ink is explicit so a badge stays readable inside a coloured bar
+      // that sets text-white on its children.
+      className={`inline-flex items-center gap-1.5 rounded-lg border-[3px] border-ink bg-white px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-ink ${className}`}
     >
       {children}
     </span>
@@ -62,21 +71,21 @@ export function Badge({
 export function Avatar({
   emoji,
   size = "md",
-  ring = false,
+  active = false,
 }: {
   emoji: string;
   size?: "sm" | "md" | "lg";
-  ring?: boolean;
+  active?: boolean;
 }) {
   const sizes = {
-    sm: "h-8 w-8 text-base",
-    md: "h-11 w-11 text-xl",
-    lg: "h-16 w-16 text-3xl",
+    sm: "h-8 w-8 text-base rounded-lg border-2",
+    md: "h-11 w-11 text-xl rounded-xl border-[3px]",
+    lg: "h-16 w-16 text-3xl rounded-2xl border-[3px]",
   };
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-white/20 to-white/5 ${sizes[size]} ${
-        ring ? "ring-2 ring-glow-400 animate-pulse-ring" : "ring-1 ring-white/10"
+      className={`grid shrink-0 place-items-center border-ink ${sizes[size]} ${
+        active ? "animate-tick bg-sun" : "bg-white"
       }`}
     >
       {emoji}
@@ -84,31 +93,18 @@ export function Avatar({
   );
 }
 
-export function Backdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className="animate-float absolute -left-32 top-[-10%] h-[38rem] w-[38rem] rounded-full bg-glow-500/25 blur-3xl" />
-      <div
-        className="animate-float absolute -right-24 top-[12%] h-[30rem] w-[30rem] rounded-full bg-candy-500/20 blur-3xl"
-        style={{ animationDelay: "-4s" }}
-      />
-      <div
-        className="animate-float absolute bottom-[-18%] left-1/3 h-[34rem] w-[34rem] rounded-full bg-sky-500/15 blur-3xl"
-        style={{ animationDelay: "-8s" }}
-      />
-    </div>
-  );
-}
-
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-glow-400 to-candy-500 text-xl shadow-lg shadow-glow-500/30">
-        🎭
+      <span className="grid h-11 w-11 -rotate-3 place-items-center rounded-xl border-[3px] border-ink bg-sun font-display text-2xl font-bold shadow-hard-sm">
+        ?
       </span>
       {!compact && (
-        <span className="text-lg font-bold tracking-tight">
-          Couple<span className="text-glow-300">Games</span>
+        <span className="leading-tight">
+          <span className="block font-display text-xl">¿Quién soy?</span>
+          <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-ink-soft">
+            CoupleGames
+          </span>
         </span>
       )}
     </span>
@@ -123,12 +119,12 @@ export function ErrorBar({
   onClose?: () => void;
 }) {
   return (
-    <div className="animate-pop fixed inset-x-0 bottom-4 z-50 mx-auto w-[min(92vw,30rem)] rounded-2xl border border-rose-400/30 bg-rose-500/20 px-4 py-3 text-sm text-rose-50 backdrop-blur-xl">
+    <div className="animate-pop fixed inset-x-0 bottom-4 z-50 mx-auto w-[min(92vw,30rem)] rounded-xl border-[3px] border-ink bg-tomato px-4 py-3 text-sm font-bold text-white shadow-hard">
       <div className="flex items-start gap-3">
         <span>⚠️</span>
         <p className="flex-1">{message}</p>
         {onClose && (
-          <button onClick={onClose} className="text-rose-100/70 hover:text-white">
+          <button onClick={onClose} aria-label="Cerrar" className="px-1">
             ✕
           </button>
         )}
@@ -138,20 +134,39 @@ export function ErrorBar({
 }
 
 export function Confetti() {
-  const pieces = Array.from({ length: 28 });
-  const colors = ["#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#60a5fa"];
+  const pieces = Array.from({ length: 30 });
+  const colors = ["#ffc83d", "#ff4b4b", "#3d7bff", "#1fbf6b", "#ff7ab8"];
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
       {pieces.map((_, i) => (
         <span
           key={i}
-          className="animate-confetti absolute block h-3 w-2 rounded-sm"
+          className="animate-confetti absolute block h-3.5 w-3 border-2 border-ink"
           style={{
-            left: `${(i * 37) % 100}%`,
+            left: `${(i * 31) % 100}%`,
             background: colors[i % colors.length],
-            animationDelay: `${(i % 10) * 0.12}s`,
+            animationDelay: `${(i % 12) * 0.14}s`,
           }}
         />
+      ))}
+    </div>
+  );
+}
+
+/** Empty letter slots, one per letter of the hidden name. */
+export function LetterSlots({ mask }: { mask: string }) {
+  const words = mask.split(" ").filter(Boolean);
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+      {words.map((word, wordIndex) => (
+        <span key={wordIndex} className="flex gap-1.5">
+          {Array.from(word).map((_, letterIndex) => (
+            <span
+              key={letterIndex}
+              className="h-9 w-7 rounded-md border-[3px] border-ink bg-paper-2 sm:h-11 sm:w-8"
+            />
+          ))}
+        </span>
       ))}
     </div>
   );

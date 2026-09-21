@@ -3,29 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { AnswerValue } from "@/lib/types";
 import type { SessionView } from "@/lib/view";
-import { TimerRing, useCountdown } from "./Timer";
 import Poster from "./Poster";
-import { Avatar, Badge, Button, Card } from "./ui";
+import { TimerBox, useCountdown } from "./Timer";
+import { Avatar, Badge, Button, Card, LetterSlots } from "./ui";
 
-const ANSWER_STYLES: Record<AnswerValue, { label: string; emoji: string; className: string }> = {
-  si: {
-    label: "Sí",
-    emoji: "✅",
-    className: "from-emerald-500 to-teal-400 shadow-emerald-500/25",
-  },
-  no: {
-    label: "No",
-    emoji: "❌",
-    className: "from-rose-500 to-orange-500 shadow-rose-500/25",
-  },
-  quiza: {
-    label: "Quizá",
-    emoji: "🤷",
-    className: "from-amber-400 to-yellow-500 shadow-amber-500/25",
-  },
+const ANSWERS: Record<AnswerValue, { label: string; emoji: string; color: string }> = {
+  si: { label: "Sí", emoji: "👍", color: "bg-grass text-white" },
+  no: { label: "No", emoji: "👎", color: "bg-tomato text-white" },
+  quiza: { label: "Quizá", emoji: "🤔", color: "bg-sun text-ink" },
 };
 
-type Act = (action: string, payload?: Record<string, unknown>) => Promise<{ correct?: boolean } | unknown>;
+type Act = (
+  action: string,
+  payload?: Record<string, unknown>,
+) => Promise<{ correct?: boolean } | unknown>;
 
 export default function Play({
   view,
@@ -46,29 +37,31 @@ export default function Play({
   );
 }
 
-function RoundHeader({
+function TurnBar({
   view,
   left,
-  subtitle,
+  title,
+  tone,
 }: {
   view: SessionView;
   left: number;
-  subtitle: string;
+  title: string;
+  tone: string;
 }) {
   const round = view.round!;
   return (
-    <div className="flex items-center gap-4">
-      <TimerRing left={left} total={round.totalSeconds} />
+    <div className={`flex items-center gap-4 border-b-[3px] border-ink px-5 py-4 ${tone}`}>
+      <TimerBox left={left} total={round.totalSeconds} />
       <div className="min-w-0">
-        <p className="text-xs uppercase tracking-[0.2em] text-white/45">
+        <p className="text-xs font-extrabold uppercase tracking-widest opacity-80">
           Ronda {view.roundsDone + 1} de {view.roundsTotal}
         </p>
-        <p className="mt-1 truncate text-lg font-bold tracking-tight">{subtitle}</p>
+        <p className="mt-0.5 truncate font-display text-2xl leading-tight">{title}</p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Badge>
             {round.card.categoryEmoji} {round.card.categoryLabel}
           </Badge>
-          <Badge>Fuente: {round.card.source}</Badge>
+          <Badge className="hidden sm:inline-flex">{round.card.source}</Badge>
         </div>
       </div>
     </div>
@@ -78,29 +71,29 @@ function RoundHeader({
 function AnswersFeed({ view }: { view: SessionView }) {
   const answers = view.round!.answers;
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
-        Respuestas del grupo
+    <>
+      <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+        Lo que ha contestado el grupo
       </p>
       {answers.length === 0 ? (
-        <p className="mt-3 rounded-2xl bg-white/5 p-4 text-sm text-white/45">
-          Haz tu primera pregunta en voz alta: ¿soy una persona real?
+        <p className="mt-3 rounded-xl border-[3px] border-dashed border-ink/30 p-4 text-sm font-semibold text-ink-soft">
+          Lanza la primera pregunta en voz alta: ¿soy una persona real?
         </p>
       ) : (
-        <ul className="scroll-soft mt-3 flex max-h-40 flex-col gap-2 overflow-y-auto pr-1">
+        <ul className="scroll-soft mt-3 flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
           {answers.map((answer) => {
-            const style = ANSWER_STYLES[answer.value];
+            const style = ANSWERS[answer.value];
             return (
               <li
                 key={answer.id}
-                className="animate-pop flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-2"
+                className="animate-pop flex items-center gap-2.5 rounded-xl border-[3px] border-ink bg-paper px-3 py-2"
               >
                 <Avatar emoji={answer.emoji} size="sm" />
-                <span className="flex-1 truncate text-sm text-white/70">
+                <span className="flex-1 truncate text-sm font-bold">
                   {answer.playerName}
                 </span>
                 <span
-                  className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-white ${style.className}`}
+                  className={`rounded-lg border-2 border-ink px-2.5 py-1 text-xs font-extrabold ${style.color}`}
                 >
                   {style.emoji} {style.label}
                 </span>
@@ -109,7 +102,7 @@ function AnswersFeed({ view }: { view: SessionView }) {
           })}
         </ul>
       )}
-    </div>
+    </>
   );
 }
 
@@ -148,24 +141,24 @@ function GuesserPanel({
   const hintsLeft = round.hintsMax - round.hintsUsed;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-      <Card className="animate-rise overflow-hidden">
-        <div className="border-b border-white/10 p-6">
-          <RoundHeader view={view} left={left} subtitle="Te toca adivinar" />
-        </div>
+    <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <Card className="animate-rise overflow-hidden p-0">
+        <TurnBar view={view} left={left} title="Te toca adivinar" tone="bg-sun" />
 
-        <div className="relative p-6">
-          <div className="pointer-events-none absolute inset-x-6 top-6 h-44 rounded-3xl bg-gradient-to-br from-glow-500/30 to-candy-500/20 blur-2xl" />
+        <div className="p-5 sm:p-6">
           <div
-            className={`relative grid place-items-center rounded-3xl border border-white/15 bg-night-900/60 p-8 text-center ${
-              shake ? "animate-pop" : ""
+            className={`rounded-2xl border-[3px] border-ink bg-ink px-4 py-8 text-center ${
+              shake ? "animate-wiggle" : ""
             }`}
           >
-            <span className="text-5xl">🙈</span>
-            <p className="mt-4 font-mono text-2xl tracking-[0.35em] text-glow-300 sm:text-3xl">
-              {card.mask}
+            <p className="font-display text-sm uppercase tracking-[0.3em] text-white/70">
+              Carta boca abajo
             </p>
-            <p className="mt-3 text-sm text-white/50">
+            <p className="mt-2 font-display text-5xl text-white">?</p>
+            <div className="mt-6">
+              <LetterSlots mask={card.mask ?? ""} />
+            </div>
+            <p className="mt-5 text-sm font-bold text-white/70">
               {card.letters} letras · nadie puede decirte el nombre
             </p>
           </div>
@@ -177,10 +170,8 @@ function GuesserPanel({
               onChange={(e) => setGuess(e.target.value)}
               placeholder="Escribe tu respuesta…"
               maxLength={60}
-              className={`w-full rounded-2xl border bg-night-900/60 px-4 py-3.5 text-base outline-none transition placeholder:text-white/30 focus:ring-2 focus:ring-glow-500/30 ${
-                shake
-                  ? "animate-pop border-rose-400/60"
-                  : "border-white/10 focus:border-glow-400"
+              className={`w-full rounded-xl border-[3px] px-4 py-3.5 text-lg font-bold outline-none placeholder:font-semibold placeholder:text-ink-soft/50 ${
+                shake ? "animate-wiggle border-tomato bg-tomato/10" : "border-ink bg-paper focus:bg-white"
               }`}
             />
             <Button type="submit" disabled={busy} className="shrink-0">
@@ -190,26 +181,29 @@ function GuesserPanel({
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
-              variant="soft"
+              variant="plain"
               disabled={busy || hintsLeft <= 0}
               onClick={() => act("hint")}
             >
-              💡 Pedir pista ({hintsLeft} restantes · −20 pts)
+              💡 Pedir pista · quedan {hintsLeft} (−20)
             </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => act("pass")}>
+            <Button variant="quiet" disabled={busy} onClick={() => act("pass")}>
               🏳️ Me rindo
             </Button>
           </div>
 
           {card.revealedHints && card.revealedHints.length > 0 && (
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2">
               {card.revealedHints.map((hint, index) => (
                 <li
                   key={hint}
-                  className="animate-pop rounded-2xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
+                  className="animate-pop rounded-lg border-[3px] border-ink bg-sun p-3 shadow-hard-sm"
+                  style={{ transform: `rotate(${index % 2 ? 1 : -1}deg)` }}
                 >
-                  <span className="mr-2 font-bold">Pista {index + 1}:</span>
-                  {hint}
+                  <p className="text-[11px] font-extrabold uppercase tracking-widest">
+                    Pista {index + 1}
+                  </p>
+                  <p className="mt-1 text-sm font-bold">{hint}</p>
                 </li>
               ))}
             </ul>
@@ -217,17 +211,15 @@ function GuesserPanel({
 
           {round.guesses.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
-                Ya intentaste
+              <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+                Ya lo intentaste con
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {round.guesses.map((g) => (
                   <span
                     key={g.id}
-                    className={`rounded-full px-3 py-1 text-xs ${
-                      g.correct
-                        ? "bg-emerald-500/25 text-emerald-100"
-                        : "bg-white/8 text-white/45 line-through"
+                    className={`rounded-lg border-2 border-ink px-2.5 py-1 text-sm font-bold ${
+                      g.correct ? "bg-grass text-white" : "bg-white line-through opacity-60"
                     }`}
                   >
                     {g.text}
@@ -239,14 +231,20 @@ function GuesserPanel({
         </div>
       </Card>
 
-      <Card className="animate-rise p-6">
-        <AnswersFeed view={view} />
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/55">
-          <p className="font-semibold text-white/80">Sugerencias de preguntas</p>
-          <p className="mt-2">¿Soy una persona real? ¿Estoy vivo? ¿Salgo en una serie?</p>
-          <p className="mt-1">¿Soy de ficción? ¿Canto? ¿Tengo poderes?</p>
-        </div>
-      </Card>
+      <div className="space-y-5">
+        <Card className="animate-rise p-5">
+          <AnswersFeed view={view} />
+        </Card>
+        <Card className="p-5" tone="paper">
+          <p className="font-display text-lg">Preguntas para arrancar</p>
+          <ul className="mt-2 space-y-1.5 text-sm font-semibold text-ink-soft">
+            <li>· ¿Soy una persona real?</li>
+            <li>· ¿Salgo en una serie o en una peli?</li>
+            <li>· ¿Canto? ¿Escribo? ¿Tengo poderes?</li>
+            <li>· ¿Me conocería mi madre?</li>
+          </ul>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -266,60 +264,58 @@ function HelperPanel({
   const card = round.card;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-      <Card className="animate-rise overflow-hidden">
-        <div className="border-b border-white/10 p-6">
-          <RoundHeader
-            view={view}
-            left={left}
-            subtitle={`${round.actorEmoji} ${round.actorName} está adivinando`}
-          />
-        </div>
+    <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <Card className="animate-rise overflow-hidden p-0">
+        <TurnBar
+          view={view}
+          left={left}
+          title={`${round.actorEmoji} ${round.actorName} adivina`}
+          tone="bg-sky text-white"
+        />
 
-        <div className="grid gap-5 p-6 sm:grid-cols-[auto_1fr]">
+        <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr] sm:p-6">
           <Poster
             src={card.image}
             alt={card.name ?? ""}
             emoji={card.categoryEmoji}
-            className="h-44 w-36 rounded-3xl shadow-xl shadow-black/40 sm:h-52 sm:w-40"
+            className="h-44 w-36 rounded-xl shadow-hard-sm sm:h-52 sm:w-40"
           />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/45">
-              El personaje secreto es
+            <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+              La carta secreta es
             </p>
-            <h2 className="mt-2 text-balance-pretty text-3xl font-black leading-tight tracking-tight sm:text-4xl">
-              {card.name}
-            </h2>
-            <p className="mt-3 text-sm text-rose-200/80">
-              🤫 No lo digas en voz alta. Solo responde a sus preguntas.
+            <h2 className="mt-1 font-display text-4xl leading-none">{card.name}</h2>
+            <p className="mt-3 inline-block rounded-lg border-2 border-ink bg-tomato px-2.5 py-1 text-xs font-extrabold text-white">
+              🤫 No lo digas en voz alta
             </p>
 
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
-                Datos que puedes confirmar
-              </p>
-              <ul className="mt-2 space-y-1.5 text-sm text-white/70">
-                {card.hints?.map((hint) => (
-                  <li key={hint} className="rounded-xl bg-white/5 px-3 py-2">
-                    {hint}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <p className="mt-4 text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+              Datos que puedes confirmar
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {card.hints?.map((hint) => (
+                <li
+                  key={hint}
+                  className="rounded-lg border-2 border-ink bg-paper px-3 py-1.5 text-sm font-semibold"
+                >
+                  {hint}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 border-t border-white/10 p-6">
-          {(Object.keys(ANSWER_STYLES) as AnswerValue[]).map((value) => {
-            const style = ANSWER_STYLES[value];
+        <div className="grid grid-cols-3 gap-3 border-t-[3px] border-ink bg-paper-2 p-5">
+          {(Object.keys(ANSWERS) as AnswerValue[]).map((value) => {
+            const style = ANSWERS[value];
             return (
               <button
                 key={value}
                 disabled={busy}
                 onClick={() => act("answer", { value })}
-                className={`rounded-3xl bg-gradient-to-br py-6 text-lg font-bold text-white shadow-lg transition active:scale-95 disabled:opacity-50 ${style.className}`}
+                className={`press rounded-xl border-[3px] border-ink py-5 font-display text-xl shadow-hard disabled:opacity-50 ${style.color}`}
               >
-                <span className="block text-2xl">{style.emoji}</span>
+                <span className="block text-3xl">{style.emoji}</span>
                 {style.label}
               </button>
             );
@@ -328,12 +324,12 @@ function HelperPanel({
       </Card>
 
       <div className="space-y-5">
-        <Card className="animate-rise p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/45">
+        <Card className="animate-rise p-5">
+          <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
             Intentos de {round.actorName}
           </p>
           {round.guesses.length === 0 ? (
-            <p className="mt-3 rounded-2xl bg-white/5 p-4 text-sm text-white/45">
+            <p className="mt-3 rounded-xl border-[3px] border-dashed border-ink/30 p-4 text-sm font-semibold text-ink-soft">
               Todavía no arriesga ningún nombre.
             </p>
           ) : (
@@ -341,10 +337,8 @@ function HelperPanel({
               {round.guesses.map((g) => (
                 <li
                   key={g.id}
-                  className={`animate-pop rounded-2xl px-3 py-2 text-sm ${
-                    g.correct
-                      ? "bg-emerald-500/20 text-emerald-100"
-                      : "bg-white/5 text-white/60"
+                  className={`animate-pop rounded-xl border-[3px] border-ink px-3 py-2 text-sm font-bold ${
+                    g.correct ? "bg-grass text-white" : "bg-paper"
                   }`}
                 >
                   {g.correct ? "🎉 " : "❌ "}
@@ -354,7 +348,7 @@ function HelperPanel({
             </ul>
           )}
         </Card>
-        <Card className="p-6">
+        <Card className="p-5">
           <AnswersFeed view={view} />
         </Card>
       </div>

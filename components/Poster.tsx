@@ -3,8 +3,9 @@
 import { useState } from "react";
 
 /**
- * Public APIs sometimes point at images that no longer exist, so every poster
- * degrades to the category emoji instead of leaving a hole in the layout.
+ * Character art comes from third-party APIs, so it can be slow or plain gone.
+ * The category emoji sits underneath as the placeholder and stays visible until
+ * the picture paints (or forever, if the URL is dead).
  */
 export default function Poster({
   src,
@@ -21,25 +22,22 @@ export default function Poster({
 }) {
   const [broken, setBroken] = useState(false);
 
-  if (!src || broken) {
-    return (
-      <div
-        className={`grid place-items-center bg-gradient-to-br from-glow-500/30 to-candy-500/20 ${className} ${emojiClassName}`}
-      >
-        {emoji}
-      </div>
-    );
-  }
-
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      referrerPolicy="no-referrer"
-      onError={() => setBroken(true)}
-      className={`object-cover ${className}`}
-    />
+    <span
+      className={`relative grid shrink-0 place-items-center overflow-hidden border-[3px] border-ink bg-paper-2 ${className}`}
+    >
+      <span className={emojiClassName}>{emoji}</span>
+      {src && !broken && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+    </span>
   );
 }
