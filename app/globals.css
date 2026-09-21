@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --color-night-950: #0a0618;
+  --color-night-900: #120a29;
+  --color-night-800: #1b1039;
+  --color-night-700: #2a1a56;
+  --color-glow-300: #c4b5fd;
+  --color-glow-400: #a78bfa;
+  --color-glow-500: #8b5cf6;
+  --color-candy-400: #f472b6;
+  --color-candy-500: #ec4899;
+  --color-mint-400: #34d399;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --animate-float: float 14s ease-in-out infinite;
+  --animate-pop: pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+  --animate-rise: rise 0.45s ease-out both;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+  --animate-confetti: confetti 2.6s ease-in forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(3%, -4%, 0) scale(1.06); }
+  66% { transform: translate3d(-3%, 3%, 0) scale(0.96); }
+}
+@keyframes pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rise {
+  0% { transform: translateY(14px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(167 139 250 / 0.55); }
+  70% { box-shadow: 0 0 0 18px rgb(167 139 250 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(167 139 250 / 0); }
+}
+@keyframes confetti {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background:
+      radial-gradient(1200px 700px at 12% -10%, #3b1d6e 0%, transparent 55%),
+      radial-gradient(1000px 600px at 92% 8%, #7c2d68 0%, transparent 50%),
+      radial-gradient(900px 700px at 50% 110%, #16265c 0%, transparent 55%),
+      var(--color-night-950);
+    background-attachment: fixed;
+    color: #f5f3ff;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: var(--color-glow-500);
+    color: white;
+  }
+  input, select, textarea, button {
+    font: inherit;
+  }
+}
+
+@utility glass {
+  background: color-mix(in oklab, white 7%, transparent);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+@utility text-balance-pretty {
+  text-wrap: pretty;
+}
+
+/* Scrollbars that do not break the dark mood */
+@layer utilities {
+  .scroll-soft {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(167 139 250 / 0.4) transparent;
+  }
+  .scroll-soft::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-soft::-webkit-scrollbar-thumb {
+    background: rgb(167 139 250 / 0.35);
+    border-radius: 999px;
+  }
+}
