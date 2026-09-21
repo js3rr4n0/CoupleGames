@@ -187,13 +187,39 @@ export default function Mesa({ code }: { code: string }) {
                           )}
                         </p>
                         <p className="text-[11px] font-bold uppercase tracking-wide text-ink-soft">
-                          {player.isHost ? "anfitrión" : "jugador"}
+                          {player.isBot ? "robot" : player.isHost ? "anfitrión" : "jugador"}
                           {player.wins > 0 && ` · ${player.wins} 🏆`}
                         </p>
                       </div>
                     </li>
                   ))}
                 </ul>
+                {isHost && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border-[3px] border-dashed border-ink/35 p-3">
+                    <span className="text-sm font-extrabold">
+                      🤖 ¿Falta gente? Juega contra la máquina
+                    </span>
+                    <Button
+                      variant="plain"
+                      className="px-3 py-1.5 text-sm"
+                      disabled={busy || view.players.length >= view.maxPlayers}
+                      onClick={() => send("add-bot")}
+                    >
+                      Añadir robot
+                    </Button>
+                    {view.players.some((player) => player.isBot) && (
+                      <Button
+                        variant="quiet"
+                        className="px-3 py-1.5 text-sm"
+                        disabled={busy}
+                        onClick={() => send("remove-bot")}
+                      >
+                        Quitar uno
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-5">
                   {isHost ? (
                     <Button

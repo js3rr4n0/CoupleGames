@@ -1,5 +1,6 @@
 import type { GameAction, GameContext, GameDefinition, Seat, Winner } from "@/lib/engine/types";
 import { GameError, nameOf, roll, shuffled } from "./util";
+import type { CluedoCard } from "./cluedo-data";
 import {
   ALL_CARDS,
   CARD_BY_ID,
@@ -402,6 +403,75 @@ export const cluedo: GameDefinition<CluedoState> = {
       solution:
         state.winnerId || state.stage === "fin" ? state.solution : null,
     };
+  },
+
+  /**
+   * Robot detective. Deduce solo con lo que vería en su silla: sus cartas y las
+   * que le han enseñado. Nunca mira la solución ni las manos ajenas.
+   */
+  bot(state, playerId): GameAction | null {
+    if (state.winnerId || state.stage === "fin") return null;
+
+    // Refutar no depende del turno.
+    const suggestion = state.suggestion;
+    if (suggestion?.askingId === playerId) {
+      const hand = state.hands[playerId] ?? [];
+      const options = [suggestion.suspect, suggestion.weapon, suggestion.room].filter(
+        (card) => hand.includes(card),
+      );
+      if (!options.length) return null;
+      // Enseña siempre la misma carta a la misma persona, como haría cualquiera.
+      const pick =
+        options[suggestion.by.charCodeAt(suggestion.by.length - 1) % options.length];
+      return { type: "refutar", cardId: pick };
+    }
+
+    if (state.turn !== playerId || state.out.includes(playerId)) return null;
+
+    const known = new Set([
+      ...(state.hands[playerId] ?? []),
+      ...(state.reveals[playerId] ?? []).map((reveal) => reveal.card),
+    ]);
+    const openOnes = (cards: CluedoCard[]) =>
+      cards.map((card) => card.id).filter((id) => !known.has(id));
+
+    const suspects = openOnes(SUSPECTS);
+    const weapons = openOnes(WEAPONS);
+    const rooms = openOnes(ROOMS);
+
+    // Si solo queda una combinación posible, se juega el todo por el todo.
+    if (
+      suspects.length === 1 &&
+      weapons.length === 1 &&
+      rooms.length === 1 &&
+      state.stage !== "refutar"
+    ) {
+      return {
+        type: "acusar",
+        suspect: suspects[0],
+        weapon: weapons[0],
+        room: rooms[0],
+      };
+    }
+
+    if (state.stage === "tirar") return { type: "tirar" };
+
+    if (state.stage === "mover") {
+      const wanted = state.reachable.filter((room) => rooms.includes(room));
+      const pool = wanted.length ? wanted : state.reachable;
+      if (!pool.length) return null;
+      return { type: "mover", room: pool[Math.floor(Math.random() * pool.length)] };
+    }
+
+    if (state.stage === "sugerir") {
+      const suspect =
+        suspects[Math.floor(Math.random() * suspects.length)] ?? SUSPECTS[0].id;
+      const weapon =
+        weapons[Math.floor(Math.random() * weapons.length)] ?? WEAPONS[0].id;
+      return { type: "sugerir", suspect, weapon };
+    }
+
+    return null;
   },
 
   winner(state): Winner | null {

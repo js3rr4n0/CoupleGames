@@ -602,6 +602,103 @@ export const monopolio: GameDefinition<MonoState> = {
     };
   },
 
+  /**
+   * Robot inversor: compra con cabeza, construye cuando tiene un color entero,
+   * hipoteca antes de arruinarse y solo acepta tratos que le convienen.
+   */
+  bot(state, playerId): GameAction | null {
+    if (state.winnerId || state.out.includes(playerId)) return null;
+
+    // Un trato se contesta aunque no sea su turno.
+    const trade = state.trade;
+    if (trade && trade.to === playerId) {
+      const value = (list: number[]) =>
+        list.reduce((sum, index) => {
+          const prop = state.props[index];
+          const price = BOARD[index].price ?? 0;
+          return sum + (prop?.mortgaged ? price / 2 : price);
+        }, 0);
+      const gets = value(trade.give) + trade.giveCash;
+      const gives = value(trade.get) + trade.getCash;
+      const affordable = trade.getCash <= state.cash[playerId];
+      return {
+        type: "responder-trato",
+        acepta: affordable && gets >= gives * 1.15,
+      };
+    }
+
+    if (state.turn !== playerId) return null;
+    const cash = state.cash[playerId] ?? 0;
+    const owned = Object.entries(state.props)
+      .filter(([, prop]) => prop.owner === playerId)
+      .map(([index]) => Number(index));
+
+    if (state.stage === "deuda") {
+      const debt = state.debt;
+      if (!debt) return { type: "terminar" };
+      if (cash >= debt.amount) return { type: "pagar-deuda" };
+      const mortgageable = owned.find(
+        (index) => !state.props[index].mortgaged && !state.props[index].houses,
+      );
+      if (mortgageable !== undefined)
+        return { type: "hipotecar", property: mortgageable };
+      const withHouses = owned.find((index) => state.props[index].houses > 0);
+      if (withHouses !== undefined)
+        return { type: "vender-casa", property: withHouses };
+      return { type: "quiebra" };
+    }
+
+    if (state.jail[playerId] >= 0 && state.stage === "tirar") {
+      if (state.jailCards[playerId] > 0) return { type: "fianza" };
+      if (cash > 400) return { type: "fianza" };
+      return { type: "tirar" };
+    }
+
+    if (state.stage === "tirar") return { type: "tirar" };
+
+    if (state.stage === "comprar") {
+      const index = state.positions[playerId];
+      const space = BOARD[index];
+      const price = space.price ?? 0;
+      if (cash < price) return { type: "no-comprar" };
+      const completes =
+        space.group &&
+        BOARD.filter((other) => other.group === space.group).every(
+          (other) => other.i === index || state.props[other.i]?.owner === playerId,
+        );
+      const reserve = space.kind === "calle" ? 150 : 80;
+      return cash - price >= reserve || completes
+        ? { type: "comprar" }
+        : { type: "no-comprar" };
+    }
+
+    if (state.stage === "gestion") {
+      for (const index of owned) {
+        const space = BOARD[index];
+        const prop = state.props[index];
+        if (!space.group || !space.houseCost || prop.mortgaged || prop.houses >= 5) continue;
+        const group = BOARD.filter((other) => other.group === space.group);
+        const complete = group.every((other) => state.props[other.i]?.owner === playerId);
+        if (!complete) continue;
+        if (group.some((other) => state.props[other.i].mortgaged)) continue;
+        const min = Math.min(...group.map((other) => state.props[other.i].houses));
+        if (prop.houses > min) continue;
+        if (cash - space.houseCost < 250) continue;
+        return { type: "construir", property: index };
+      }
+      const recoverable = owned.find(
+        (index) =>
+          state.props[index].mortgaged &&
+          cash > Math.round(((BOARD[index].price ?? 0) / 2) * 1.1) + 400,
+      );
+      if (recoverable !== undefined)
+        return { type: "deshipotecar", property: recoverable };
+      return { type: "terminar" };
+    }
+
+    return null;
+  },
+
   winner(state): Winner | null {
     return state.winnerId
       ? { ids: [state.winnerId], label: "¡Se queda con todo el tablero!" }

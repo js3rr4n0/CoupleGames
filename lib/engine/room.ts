@@ -35,8 +35,9 @@ export function seatsOf(room: Room): Seat[] {
     emoji: player.emoji,
     seat: index,
     isHost: player.isHost,
-    online: now - player.lastSeen < ONLINE_MS,
+    online: player.isBot || now - player.lastSeen < ONLINE_MS,
     flower: player.flower,
+    isBot: player.isBot,
   }));
 }
 
@@ -55,6 +56,7 @@ export function createRoom(
     emoji: hasYellowFlower(name) ? FLOWER_EMOJI : EMOJIS[0],
     isHost: true,
     flower: hasYellowFlower(name),
+    isBot: false,
     joinedAt: now,
     lastSeen: now,
     wins: 0,
@@ -73,6 +75,7 @@ export function createRoom(
     round: 1,
     version: 1,
     lastActivity: now,
+    botThinkingUntil: 0,
   };
   putRoom(room);
   return { room, player: host };
@@ -94,6 +97,7 @@ export function joinRoom(room: Room, rawName: string): RoomPlayer {
     emoji: hasYellowFlower(name) ? FLOWER_EMOJI : freeEmoji(room),
     isHost: false,
     flower: hasYellowFlower(name),
+    isBot: false,
     joinedAt: now,
     lastSeen: now,
     wins: 0,
@@ -102,6 +106,55 @@ export function joinRoom(room: Room, rawName: string): RoomPlayer {
   room.pads[player.id] = emptyPad();
   saveRoom(room);
   return player;
+}
+
+const BOT_NAMES = [
+  "Robotín",
+  "Chip",
+  "Tuerca",
+  "Bip-Bip",
+  "Circuito",
+  "Cabledo",
+];
+
+export function addBot(room: Room, player: RoomPlayer): RoomPlayer {
+  const game = GAMES[room.gameId];
+  if (!player.isHost) throw new GameError("Solo quien creó la mesa puede añadir robots.", 403);
+  if (room.phase !== "lobby") throw new GameError("Los robots se añaden antes de empezar.");
+  if (room.players.length >= game.max)
+    throw new GameError(`Esta mesa admite como mucho ${game.max} jugadores.`);
+  if (!game.bot) throw new GameError("Este juego todavía no tiene robots.");
+
+  const used = new Set(room.players.map((p) => p.name));
+  const name = BOT_NAMES.find((candidate) => !used.has(candidate)) ?? `Robot ${room.players.length}`;
+  const now = Date.now();
+  const bot: RoomPlayer = {
+    id: newId("bot"),
+    name,
+    emoji: "🤖",
+    isHost: false,
+    flower: false,
+    isBot: true,
+    joinedAt: now,
+    lastSeen: now,
+    wins: 0,
+  };
+  room.players.push(bot);
+  room.pads[bot.id] = emptyPad();
+  if (room.targetPlayers < room.players.length) room.targetPlayers = room.players.length;
+  saveRoom(room);
+  return bot;
+}
+
+export function removeBot(room: Room, player: RoomPlayer, botId?: string): void {
+  if (!player.isHost) throw new GameError("Solo quien creó la mesa puede quitar robots.", 403);
+  if (room.phase !== "lobby") throw new GameError("Los robots se quitan antes de empezar.");
+  const bots = room.players.filter((p) => p.isBot);
+  const target = botId ? bots.find((p) => p.id === botId) : bots[bots.length - 1];
+  if (!target) throw new GameError("No hay robots en la mesa.");
+  room.players = room.players.filter((p) => p.id !== target.id);
+  delete room.pads[target.id];
+  saveRoom(room);
 }
 
 export function requireRoomPlayer(room: Room, playerId: string): RoomPlayer {
@@ -125,6 +178,7 @@ export function startGame(room: Room, player: RoomPlayer): void {
   room.state = game.create(seatsOf(room));
   room.phase = "playing";
   room.log = [];
+  room.botThinkingUntil = 0;
   pushLog(room, `Empieza la partida de ${game.name}`, game.emoji);
   saveRoom(room);
 }

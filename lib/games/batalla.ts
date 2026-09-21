@@ -278,6 +278,71 @@ export const batalla: GameDefinition<BatallaState> = {
     };
   },
 
+  /**
+   * Robot artillero: coloca al azar y luego caza. Solo usa lo que vería
+   * cualquiera en su silla: sus propios disparos y los barcos ya hundidos.
+   */
+  bot(state, playerId): GameAction | null {
+    const mine = state.fleets[playerId];
+    if (!mine) return null;
+    if (state.stage === "colocando") return mine.ready ? null : { type: "listo" };
+    if (state.winnerId || state.turn !== playerId) return null;
+
+    const rivalId = state.order.find((id) => id !== playerId)!;
+    const rival = state.fleets[rivalId];
+    const grid = rival.grid;
+    const sunkCells = new Set(
+      rival.ships
+        .filter(sunk)
+        .flatMap((ship) => shipCells(ship).map(([r, c]) => `${r},${c}`)),
+    );
+
+    const open = (r: number, c: number) =>
+      r >= 0 && c >= 0 && r < SIZE && c < SIZE && !grid[r][c];
+
+    // Impactos de barcos que siguen a flote: hay que rematarlos.
+    const live: number[][] = [];
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (grid[r][c] === "tocado" && !sunkCells.has(`${r},${c}`)) live.push([r, c]);
+      }
+    }
+
+    if (live.length) {
+      const targets: number[][] = [];
+      for (const [r, c] of live) {
+        // Si dos impactos están alineados, se sigue por esa línea.
+        for (const [dr, dc] of [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0],
+        ]) {
+          const alignedHit =
+            live.some(([r2, c2]) => r2 === r + dr && c2 === c + dc) ||
+            live.some(([r2, c2]) => r2 === r - dr && c2 === c - dc);
+          if (open(r + dr, c + dc)) targets.push([r + dr, c + dc, alignedHit ? 0 : 1]);
+        }
+      }
+      if (targets.length) {
+        targets.sort((a, b) => a[2] - b[2] || Math.random() - 0.5);
+        const [row, col] = targets[0];
+        return { type: "disparo", row, col };
+      }
+    }
+
+    // Sin rastro: se barre en damero, que es donde caen todos los barcos.
+    const free: number[][] = [];
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) if (open(r, c)) free.push([r, c]);
+    }
+    if (!free.length) return null;
+    const checker = free.filter(([r, c]) => (r + c) % 2 === 0);
+    const pool = checker.length ? checker : free;
+    const [row, col] = pool[Math.floor(Math.random() * pool.length)];
+    return { type: "disparo", row, col };
+  },
+
   winner(state): Winner | null {
     return state.winnerId
       ? { ids: [state.winnerId], label: "¡Flota hundida!" }

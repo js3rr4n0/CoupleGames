@@ -13,6 +13,7 @@ export interface Seat {
   isHost: boolean;
   online: boolean;
   flower: boolean;
+  isBot: boolean;
 }
 
 export interface LogEntry {
@@ -46,6 +47,8 @@ export interface Room<S = unknown> {
   round: number;
   version: number;
   lastActivity: number;
+  /** Hasta cuándo "piensa" el robot al que le toca, para que se le vea jugar. */
+  botThinkingUntil: number;
 }
 
 export interface RoomPlayer {
@@ -54,6 +57,8 @@ export interface RoomPlayer {
   emoji: string;
   isHost: boolean;
   flower: boolean;
+  /** Los robots ocupan asiento como cualquiera, pero los mueve el servidor. */
+  isBot: boolean;
   joinedAt: number;
   lastSeen: number;
   wins: number;
@@ -98,4 +103,9 @@ export interface GameDefinition<S> {
   /** Aquí se recorta lo privado: cada jugador recibe solo lo que puede ver. */
   view(state: S, playerId: string | null, players: Seat[]): unknown;
   winner(state: S): Winner | null;
+  /**
+   * Qué haría un robot en el asiento `playerId`, o null si no le toca nada.
+   * Solo puede mirar lo que vería ese jugador: su mano, sus pistas y lo público.
+   */
+  bot?(state: S, playerId: string, players: Seat[]): GameAction | null;
 }

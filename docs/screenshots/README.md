@@ -23,3 +23,6 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `24-uno-movil.png` | UNO en móvil |
 | `25-cluedo.png` | Cluedo: mansión, sugerencia y cuadrícula de descartes |
 | `26-monopolio.png` | Monopolio: tablero, propiedades y caja |
+| `27-robots-lobby.png` | Lobby con un robot sentado a la mesa |
+| `28-robots-partida.png` | Partida contra el robot |
+| `29-robots-uno.png` | UNO contra dos robots |

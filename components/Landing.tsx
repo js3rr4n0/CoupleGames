@@ -249,7 +249,10 @@ export default function Landing({ games }: { games: GameCard[] }) {
               desde su móvil. Las cartas y los tableros secretos solo los ve su dueño.
             </p>
           </div>
-          <Badge className="bg-sun">🔒 Cada quien ve solo lo suyo</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="bg-sun">🔒 Cada quien ve solo lo suyo</Badge>
+            <Badge>🤖 ¿Nadie a mano? Juega con robots</Badge>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

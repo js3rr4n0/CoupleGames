@@ -293,6 +293,56 @@ export const uno: GameDefinition<UnoState> = {
     };
   },
 
+  /**
+   * Robot con sentido común: guarda los comodines para el final, castiga a
+   * quien va ganando y elige el color del que más cartas tiene.
+   */
+  bot(state, playerId): GameAction | null {
+    if (state.winnerId || state.turn !== playerId) return null;
+    const hand = state.hands[playerId] ?? [];
+    const top = state.discard[state.discard.length - 1];
+
+    const bestColor = (): UnoColor => {
+      const tally: Record<string, number> = {};
+      for (const card of hand) if (card.color) tally[card.color] = (tally[card.color] ?? 0) + 1;
+      const sorted = COLORS.filter((color) => tally[color]).sort(
+        (a, b) => (tally[b] ?? 0) - (tally[a] ?? 0),
+      );
+      return sorted[0] ?? COLORS[Math.floor(Math.random() * COLORS.length)];
+    };
+
+    if (state.pendingCardId) {
+      const drawn = hand.find((card) => card.id === state.pendingCardId);
+      if (drawn && playable(drawn, top, state.color)) {
+        return drawn.kind === "comodin" || drawn.kind === "mas4"
+          ? { type: "jugar", cardId: drawn.id, color: bestColor() }
+          : { type: "jugar", cardId: drawn.id };
+      }
+      return { type: "pasar" };
+    }
+
+    const options = hand.filter((card) => playable(card, top, state.color));
+    if (!options.length) return { type: "robar" };
+
+    // ¿Alguien está a punto de cantar UNO? Entonces toca fastidiar.
+    const nextId = seatAfter(state, playerId);
+    const nextIsClose = (state.hands[nextId]?.length ?? 9) <= 2;
+
+    const score = (card: UnoCard): number => {
+      if (card.kind === "mas4") return nextIsClose ? 95 : 10;
+      if (card.kind === "comodin") return 15;
+      if (card.kind === "mas2") return nextIsClose ? 90 : 70;
+      if (card.kind === "salta") return nextIsClose ? 85 : 65;
+      if (card.kind === "cambio") return 60;
+      return 40 + (card.value ?? 0);
+    };
+
+    const choice = [...options].sort((a, b) => score(b) - score(a))[0];
+    return choice.kind === "comodin" || choice.kind === "mas4"
+      ? { type: "jugar", cardId: choice.id, color: bestColor() }
+      : { type: "jugar", cardId: choice.id };
+  },
+
   winner(state): Winner | null {
     return state.winnerId ? { ids: [state.winnerId], label: "¡Se quedó sin cartas!" } : null;
   },

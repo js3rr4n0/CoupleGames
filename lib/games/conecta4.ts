@@ -139,6 +139,56 @@ export const conecta4: GameDefinition<Conecta4State> = {
     return { ...state, youPlay: playerId ? state.order.includes(playerId) : false };
   },
 
+  /**
+   * Robot de dos jugadas: gana si puede, tapa si le van a ganar, evita regalar
+   * la jugada siguiente y, si todo da igual, tira al centro.
+   */
+  bot(state, playerId): GameAction | null {
+    if (state.winnerId || state.draw) return null;
+    if (state.turn !== playerId) return null;
+    const rival = state.order.find((id) => id !== playerId)!;
+
+    const free = (board: (string | null)[][], col: number) => {
+      for (let row = ROWS - 1; row >= 0; row--) if (!board[row][col]) return row;
+      return -1;
+    };
+    const drop = (board: (string | null)[][], col: number, who: string) => {
+      const next = board.map((row) => [...row]);
+      const row = free(next, col);
+      if (row < 0) return null;
+      next[row][col] = who;
+      return { board: next, row };
+    };
+    const columns = Array.from({ length: COLS }, (_, col) => col).filter(
+      (col) => free(state.board, col) >= 0,
+    );
+    if (!columns.length) return null;
+
+    for (const who of [playerId, rival]) {
+      for (const col of columns) {
+        const played = drop(state.board, col, who);
+        if (played && findLine(played.board, played.row, col)) {
+          return { type: "drop", col };
+        }
+      }
+    }
+
+    const safe = columns.filter((col) => {
+      const played = drop(state.board, col, playerId);
+      if (!played) return false;
+      return !columns.some((answer) => {
+        const reply = drop(played.board, answer, rival);
+        return reply ? Boolean(findLine(reply.board, reply.row, answer)) : false;
+      });
+    });
+
+    const pool = safe.length ? safe : columns;
+    const byCentre = [...pool].sort(
+      (a, b) => Math.abs(a - 3) - Math.abs(b - 3) || Math.random() - 0.5,
+    );
+    return { type: "drop", col: byCentre[0] };
+  },
+
   winner(state): Winner | null {
     if (state.winnerId) return { ids: [state.winnerId], label: "¡Cuatro en raya!" };
     if (state.draw) return { ids: [], label: "Tablas: el tablero se llenó" };

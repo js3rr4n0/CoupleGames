@@ -88,6 +88,28 @@ categorías son películas de verdad y cuáles son solo etiquetas.
 - Rendirse o quedarse sin tiempo: 0 puntos, y se revela el personaje.
 - El historial guarda todas las rondas de todas las partidas de la sala.
 
+## Jugar sin gente: los robots
+
+Si no hay nadie a mano, el anfitrión añade **robots** desde el lobby (🤖 *Añadir
+robot*) y la mesa se completa sola. No hacen falta claves ni servicios externos:
+cada robot es una función del propio servidor que decide en milisegundos, con
+una pausa de un segundo para que se le vea jugar.
+
+Lo importante: **el robot solo ve lo que vería en su silla**. Usa su mano, sus
+propios disparos y lo que le han enseñado; nunca la solución del Cluedo, la
+flota ajena ni las cartas del resto.
+
+| Juego | Cómo juega el robot |
+| --- | --- |
+| Conecta 4 | Gana si puede, tapa si le van a ganar, descarta las columnas que regalan la jugada siguiente y, en igualdad, tira al centro. |
+| Batalla naval | Coloca al azar y luego caza: cuando toca un barco sigue por las casillas contiguas, y si no tiene rastro barre en damero. |
+| UNO | Guarda los comodines para el final, suelta +2 y salta cuando alguien está a punto de cantar UNO y elige el color del que más cartas tiene. |
+| Cluedo | Lleva su propia deducción con lo que le han enseñado, se mueve a las habitaciones que aún no descarta y acusa en cuanto solo queda una combinación. |
+| Monopolio | Compra dejándose un colchón (y siempre si completa color), construye con el grupo entero, hipoteca para pagar deudas y solo acepta tratos que le convienen. |
+
+¿Quién soy? no tiene robots: hace falta alguien de carne y hueso que oiga la
+pregunta y conteste sí o no.
+
 ## Los otros cinco juegos
 
 Todos comparten el mismo motor de mesa (`lib/engine`): turnos, historial público,

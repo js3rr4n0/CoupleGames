@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { GameError } from "@/lib/game";
 import {
+  addBot,
   getRoom,
   joinRoom,
+  removeBot,
   playAction,
   rematch,
   requireRoomPlayer,
@@ -10,12 +12,14 @@ import {
   writePad,
 } from "@/lib/engine/room";
 import { saveRoom } from "@/lib/engine/store";
+import { runBots } from "@/lib/engine/bots";
 import { buildRoomView } from "@/lib/engine/view";
 
 interface Body {
   action?: string;
   playerId?: string;
   name?: string;
+  botId?: string;
   move?: Record<string, unknown>;
   text?: string;
   mark?: { key: string; value: string };
@@ -34,6 +38,8 @@ export async function GET(
     const player = room.players.find((p) => p.id === playerId);
     if (player) player.lastSeen = Date.now();
   }
+  // Los robots juegan al ritmo de las peticiones: sin temporizadores.
+  if (runBots(room)) saveRoom(room);
   return Response.json({ view: buildRoomView(room, playerId) });
 }
 
@@ -77,6 +83,12 @@ export async function POST(
       case "rematch":
         rematch(room, player);
         break;
+      case "add-bot":
+        addBot(room, player);
+        break;
+      case "remove-bot":
+        removeBot(room, player, body.botId);
+        break;
       case "pad":
         writePad(room, player, body.text, body.mark);
         break;
@@ -87,6 +99,7 @@ export async function POST(
         return Response.json({ error: "Acción desconocida" }, { status: 400 });
     }
 
+    if (runBots(room)) saveRoom(room);
     return Response.json({ view: buildRoomView(room, player.id) });
   } catch (error) {
     const status = error instanceof GameError ? error.status : 500;
