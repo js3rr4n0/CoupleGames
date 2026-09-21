@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { SessionView } from "@/lib/view";
 import { rememberName, recallName } from "@/lib/client";
-import { Avatar, Button, Card } from "./ui";
+import { hasYellowFlower } from "@/lib/flower";
+import { Avatar, Button, Card, FlowerNote, FlowerRain } from "./ui";
 
 export default function JoinCard({
   view,
@@ -16,6 +17,7 @@ export default function JoinCard({
 }) {
   const [name, setName] = useState(recallName());
   const host = view.players.find((p) => p.isHost);
+  const flower = hasYellowFlower(name);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -66,6 +68,8 @@ export default function JoinCard({
               className="mt-2 w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-lg font-bold outline-none placeholder:font-semibold placeholder:text-ink-soft/50 focus:bg-white"
             />
           </label>
+
+          {flower && <FlowerNote name={name.trim()} />}
           <Button type="submit" disabled={busy} className="w-full py-4 text-lg">
             {busy ? "Entrando…" : "Entrar a la sala ▸"}
           </Button>
@@ -77,6 +81,7 @@ export default function JoinCard({
           </p>
         )}
       </div>
+      {flower && <FlowerRain key={name.toLowerCase()} />}
     </Card>
   );
 }

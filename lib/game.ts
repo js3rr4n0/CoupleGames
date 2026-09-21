@@ -11,6 +11,7 @@ import type {
 import { newCode, newId, saveSession, putSession } from "./store";
 import { buildDeck, CATEGORY_MAP, DEFAULT_CATEGORIES } from "./providers";
 import { matchesName } from "./text";
+import { FLOWER_EMOJI, hasYellowFlower } from "./flower";
 
 export const EMOJIS = [
   "🦊", "🐼", "🦉", "🐙", "🦄", "🐯", "🦋", "🐨",
@@ -53,11 +54,12 @@ export function createSession(
   const host: Player = {
     id: newId("p"),
     name,
-    emoji: EMOJIS[0],
+    emoji: hasYellowFlower(name) ? FLOWER_EMOJI : EMOJIS[0],
     score: 0,
     totalScore: 0,
     roundsPlayed: 0,
     isHost: true,
+    flower: hasYellowFlower(name),
     joinedAt: now,
     lastSeen: now,
   };
@@ -105,11 +107,12 @@ export function joinSession(session: GameSession, rawName: string): Player {
   const player: Player = {
     id: newId("p"),
     name,
-    emoji: freeEmoji(session),
+    emoji: hasYellowFlower(name) ? FLOWER_EMOJI : freeEmoji(session),
     score: 0,
     totalScore: 0,
     roundsPlayed: 0,
     isHost: false,
+    flower: hasYellowFlower(name),
     joinedAt: now,
     lastSeen: now,
   };

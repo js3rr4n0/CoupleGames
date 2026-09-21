@@ -32,6 +32,8 @@ export interface Player {
   totalScore: number;
   roundsPlayed: number;
   isHost: boolean;
+  /** Se llama como una de las personas del guiño de la flor amarilla. */
+  flower: boolean;
   joinedAt: number;
   lastSeen: number;
 }

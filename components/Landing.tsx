@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CATEGORY_META } from "@/lib/categories";
 import { createSession, rememberName, recallName } from "@/lib/client";
-import { Badge, Button, Card, ErrorBar, Logo } from "./ui";
+import { hasYellowFlower } from "@/lib/flower";
+import { Badge, Button, Card, ErrorBar, FlowerNote, FlowerRain, Logo } from "./ui";
 
 const STEPS = [
   {
@@ -34,6 +35,7 @@ export default function Landing() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const flower = hasYellowFlower(name);
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
@@ -132,6 +134,8 @@ export default function Landing() {
                 className="mt-2 w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-lg font-bold outline-none placeholder:font-semibold placeholder:text-ink-soft/50 focus:bg-white"
               />
             </label>
+
+            {flower && <FlowerNote name={name.trim()} />}
 
             <div>
               <span className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
@@ -238,6 +242,7 @@ export default function Landing() {
         </p>
       </footer>
 
+      {flower && <FlowerRain key={name.toLowerCase()} />}
       {error && <ErrorBar message={error} onClose={() => setError(null)} />}
     </main>
   );

@@ -26,6 +26,8 @@
   --animate-wiggle: wiggle 0.4s ease-in-out;
   --animate-tick: tick 1s steps(2) infinite;
   --animate-confetti: confetti 2.4s linear forwards;
+  --animate-petal: petal 6s linear forwards;
+  --animate-sway: sway 3s ease-in-out infinite;
 }
 
 @keyframes pop {
@@ -46,6 +48,15 @@
 @keyframes tick {
   0%, 100% { transform: rotate(-1.5deg); }
   50% { transform: rotate(1.5deg); }
+}
+@keyframes petal {
+  0% { transform: translateY(-12vh) rotate(0deg); opacity: 0; }
+  8% { opacity: 1; }
+  100% { transform: translateY(112vh) rotate(420deg); opacity: 0.95; }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
 }
 @keyframes confetti {
   0% { transform: translateY(-8vh) rotate(0deg); }

@@ -10,11 +10,13 @@ import Play from "./Play";
 import Reveal from "./Reveal";
 import { HistoryList, Scoreboard } from "./Scoreboard";
 import type { SessionView } from "@/lib/view";
-import { Avatar, Badge, Button, Card, ErrorBar, Logo } from "./ui";
+import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, FlowerRain, Logo } from "./ui";
 
 export default function Room({ code }: { code: string }) {
   const { view, playerId, status, error, setError, busy, act } = useSession(code);
   const [copied, setCopied] = useState(false);
+  const [flowerOpen, setFlowerOpen] = useState(true);
+  const flower = Boolean(view?.you?.flower) && flowerOpen;
 
   if (status === "loading") {
     return (
@@ -62,6 +64,13 @@ export default function Room({ code }: { code: string }) {
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
       <RoomHeader view={view} copied={copied} setCopied={setCopied} />
+
+      {flower && (
+        <div className="mt-4">
+          <FlowerNote name={view.you.name} onClose={() => setFlowerOpen(false)} />
+          {view.phase === "lobby" && <FlowerRain />}
+        </div>
+      )}
 
       {view.phase !== "lobby" && view.roundsTotal > 0 && (
         <div className="mt-4 flex gap-1.5">

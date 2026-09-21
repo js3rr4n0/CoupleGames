@@ -153,6 +153,50 @@ export function Confetti() {
   );
 }
 
+/** Lluvia de flores amarillas: solo para el guiño del nombre. */
+export function FlowerRain() {
+  const petals = Array.from({ length: 16 });
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+      {petals.map((_, i) => (
+        <span
+          key={i}
+          className="animate-petal absolute block"
+          style={{
+            left: `${(i * 61) % 100}%`,
+            fontSize: `${18 + (i % 4) * 8}px`,
+            animationDelay: `${(i % 8) * 0.45}s`,
+          }}
+        >
+          🌼
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function FlowerNote({
+  name,
+  onClose,
+}: {
+  name?: string;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="animate-pop flex items-center gap-3 rounded-xl border-[3px] border-ink bg-sun px-4 py-3 shadow-hard-sm">
+      <span className="animate-sway text-3xl">🌼</span>
+      <p className="flex-1 font-display text-lg leading-tight">
+        {name ? `${name}, ¡` : "¡"}feliz día de las flores amarillas! 🤭
+      </p>
+      {onClose && (
+        <button onClick={onClose} aria-label="Cerrar" className="px-1 font-bold">
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Empty letter slots, one per letter of the hidden name. */
 export function LetterSlots({ mask }: { mask: string }) {
   const words = mask.split(" ").filter(Boolean);

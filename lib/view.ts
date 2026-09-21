@@ -22,6 +22,7 @@ export interface PlayerView {
   isHost: boolean;
   online: boolean;
   isActor: boolean;
+  flower: boolean;
 }
 
 export interface CardView {
@@ -89,6 +90,7 @@ export function buildView(session: GameSession, playerId: string | null): Sessio
     totalScore: p.totalScore,
     roundsPlayed: p.roundsPlayed,
     isHost: p.isHost,
+    flower: p.flower,
     online: now - p.lastSeen < ONLINE_MS,
     isActor: round?.actorId === p.id && session.phase === "playing",
   }));
