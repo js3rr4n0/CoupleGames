@@ -101,9 +101,9 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span className="leading-tight">
-          <span className="block font-display text-xl">¿Quién soy?</span>
+          <span className="block font-display text-xl">CoupleGames</span>
           <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-ink-soft">
-            CoupleGames
+            juegos para jugar juntos
           </span>
         </span>
       )}

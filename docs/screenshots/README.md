@@ -16,3 +16,10 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `09-resultados-finales.png` | Podio, historial y revancha |
 | `10-resultados-movil.png` | Resultados en móvil |
 | `11-mazos-nuevos.png` | Una carta de los mazos nuevos (anime, DreamWorks, Pixar…) |
+| `20-conecta4.png` | Conecta 4 en juego |
+| `21-batalla.png` | Batalla naval: tu flota y el mar contrario |
+| `22-batalla-movil.png` | Batalla naval en móvil |
+| `23-uno.png` | UNO con la mano privada |
+| `24-uno-movil.png` | UNO en móvil |
+| `25-cluedo.png` | Cluedo: mansión, sugerencia y cuadrícula de descartes |
+| `26-monopolio.png` | Monopolio: tablero, propiedades y caja |
