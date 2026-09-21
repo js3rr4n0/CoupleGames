@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { SessionView } from "@/lib/view";
 import { rememberName, recallName } from "@/lib/client";
 import { hasYellowFlower } from "@/lib/flower";
-import { Avatar, Button, Card, FlowerNote, FlowerRain } from "./ui";
+import { Avatar, Button, Card, FlowerNote } from "./ui";
 
 export default function JoinCard({
   view,
@@ -81,7 +81,6 @@ export default function JoinCard({
           </p>
         )}
       </div>
-      {flower && <FlowerRain key={name.toLowerCase()} />}
     </Card>
   );
 }

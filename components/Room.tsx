@@ -10,13 +10,32 @@ import Play from "./Play";
 import Reveal from "./Reveal";
 import { HistoryList, Scoreboard } from "./Scoreboard";
 import type { SessionView } from "@/lib/view";
-import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, FlowerRain, Logo } from "./ui";
+import FlowerOverlay from "./FlowerOverlay";
+import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, Logo } from "./ui";
 
 export default function Room({ code }: { code: string }) {
   const { view, playerId, status, error, setError, busy, act } = useSession(code);
   const [copied, setCopied] = useState(false);
   const [flowerOpen, setFlowerOpen] = useState(true);
+  // La pantalla completa se muestra una vez por visita a la sala.
+  const [bloomed, setBloomed] = useState(() => {
+    try {
+      return window.sessionStorage.getItem(`couplegames:bloom:${code}`) === "1";
+    } catch {
+      return false;
+    }
+  });
   const flower = Boolean(view?.you?.flower) && flowerOpen;
+  const bloom = Boolean(view?.you?.flower) && !bloomed;
+
+  function closeBloom() {
+    try {
+      window.sessionStorage.setItem(`couplegames:bloom:${code}`, "1");
+    } catch {
+      /* modo privado: simplemente se volverá a ver en la próxima visita */
+    }
+    setBloomed(true);
+  }
 
   if (status === "loading") {
     return (
@@ -65,10 +84,11 @@ export default function Room({ code }: { code: string }) {
     <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
       <RoomHeader view={view} copied={copied} setCopied={setCopied} />
 
-      {flower && (
+      {bloom && <FlowerOverlay name={view.you.name} onClose={closeBloom} />}
+
+      {flower && !bloom && (
         <div className="mt-4">
           <FlowerNote name={view.you.name} onClose={() => setFlowerOpen(false)} />
-          {view.phase === "lobby" && <FlowerRain />}
         </div>
       )}
 

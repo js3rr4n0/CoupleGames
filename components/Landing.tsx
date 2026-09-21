@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CATEGORY_META } from "@/lib/categories";
 import { createSession, rememberName, recallName } from "@/lib/client";
 import { hasYellowFlower } from "@/lib/flower";
-import { Badge, Button, Card, ErrorBar, FlowerNote, FlowerRain, Logo } from "./ui";
+import { Badge, Button, Card, ErrorBar, FlowerNote, Logo } from "./ui";
 
 const STEPS = [
   {
@@ -242,7 +242,6 @@ export default function Landing() {
         </p>
       </footer>
 
-      {flower && <FlowerRain key={name.toLowerCase()} />}
       {error && <ErrorBar message={error} onClose={() => setError(null)} />}
     </main>
   );
