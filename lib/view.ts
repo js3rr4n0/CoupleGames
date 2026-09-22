@@ -1,4 +1,5 @@
 import { CATEGORY_BY_ID } from "./categories";
+import { needsSharedStore } from "./kv";
 import { MAX_HINTS } from "./game";
 import { maskName } from "./text";
 import type {
@@ -77,6 +78,8 @@ export interface SessionView {
   deckLoading: boolean;
   deckError: string | null;
   deckRemaining: number;
+  /** El servidor no puede guardar salas de forma fiable en este alojamiento. */
+  needsSharedStore: boolean;
 }
 
 const ONLINE_MS = 15_000;
@@ -159,5 +162,6 @@ export function buildView(session: GameSession, playerId: string | null): Sessio
     deckLoading: session.loadingDeck,
     deckError: session.deckError,
     deckRemaining: session.deck.length,
+    needsSharedStore: needsSharedStore(),
   };
 }

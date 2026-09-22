@@ -11,7 +11,17 @@ import Reveal from "./Reveal";
 import { HistoryList, Scoreboard } from "./Scoreboard";
 import type { SessionView } from "@/lib/view";
 import FlowerOverlay from "./FlowerOverlay";
-import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, Logo, OfflineBar } from "./ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  ErrorBar,
+  FlowerNote,
+  Logo,
+  OfflineBar,
+  SetupWarning,
+} from "./ui";
 
 export default function Room({ code }: { code: string }) {
   const { view, playerId, status, error, setError, busy, offline, act } = useSession(code);
@@ -83,6 +93,8 @@ export default function Room({ code }: { code: string }) {
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
       <RoomHeader view={view} copied={copied} setCopied={setCopied} />
+
+      {view.needsSharedStore && <SetupWarning />}
 
       {bloom && <FlowerOverlay name={view.you.name} onClose={closeBloom} />}
 

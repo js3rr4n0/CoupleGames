@@ -14,7 +14,7 @@ import {
   syncClock,
   updateSettings,
 } from "@/lib/game";
-import { getSession, saveSession } from "@/lib/store";
+import { flushSessions, loadSession, saveSession } from "@/lib/store";
 import { buildView } from "@/lib/view";
 import type { AnswerValue, CategoryId } from "@/lib/types";
 
@@ -43,7 +43,7 @@ export async function GET(
   ctx: RouteContext<"/api/sessions/[code]">,
 ) {
   const { code } = await ctx.params;
-  const session = getSession(code);
+  const session = await loadSession(code);
   if (!session) return Response.json({ error: "Sala no encontrada" }, { status: 404 });
 
   const playerId = request.nextUrl.searchParams.get("playerId");
@@ -52,6 +52,7 @@ export async function GET(
     const player = session.players.find((p) => p.id === playerId);
     if (player) player.lastSeen = Date.now();
   }
+  await flushSessions();
   return Response.json({ view: buildView(session, playerId) });
 }
 
@@ -60,7 +61,7 @@ export async function POST(
   ctx: RouteContext<"/api/sessions/[code]">,
 ) {
   const { code } = await ctx.params;
-  const session = getSession(code);
+  const session = await loadSession(code);
   if (!session) return Response.json({ error: "Sala no encontrada" }, { status: 404 });
 
   let body: ActionBody;
@@ -75,6 +76,7 @@ export async function POST(
 
     if (body.action === "join") {
       const player = joinSession(session, body.name ?? "");
+      await flushSessions();
       return Response.json({
         playerId: player.id,
         view: buildView(session, player.id),
@@ -125,6 +127,7 @@ export async function POST(
         return Response.json({ error: "Acción desconocida" }, { status: 400 });
     }
 
+    await flushSessions();
     return Response.json({ ...extra, view: buildView(session, player.id) });
   } catch (error) {
     return fail(error);

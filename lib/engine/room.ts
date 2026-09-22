@@ -45,6 +45,7 @@ export function createRoom(
   gameId: GameId,
   hostName: string,
   targetPlayers: number,
+  code?: string,
 ): { room: Room; player: RoomPlayer } {
   const game = GAMES[gameId];
   if (!game) throw new GameError("Ese juego no existe.", 404);
@@ -62,7 +63,7 @@ export function createRoom(
     wins: 0,
   };
   const room: Room = {
-    code: newRoomCode(),
+    code: code ?? newRoomCode(),
     gameId,
     createdAt: now,
     hostId: host.id,

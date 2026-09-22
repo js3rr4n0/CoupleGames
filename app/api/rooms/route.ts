@@ -1,6 +1,7 @@
 import { GameError } from "@/lib/game";
 import { createRoom } from "@/lib/engine/room";
-import { sweepRooms } from "@/lib/engine/store";
+import { flushRooms, roomExists, sweepRooms } from "@/lib/engine/store";
+import { newUniqueCode, sessionExists } from "@/lib/store";
 import { buildRoomView } from "@/lib/engine/view";
 import { isGameId } from "@/lib/games/registry";
 
@@ -14,11 +15,17 @@ export async function POST(request: Request) {
     };
     if (!body.gameId || !isGameId(body.gameId))
       throw new GameError("Ese juego no existe.", 404);
+    const code = await newUniqueCode(
+      async (candidate) =>
+        (await roomExists(candidate)) || (await sessionExists(candidate)),
+    );
     const { room, player } = createRoom(
       body.gameId,
       body.name ?? "",
       Number(body.players ?? 2),
+      code,
     );
+    await flushRooms();
     return Response.json({
       code: room.code,
       playerId: player.id,

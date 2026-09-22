@@ -228,12 +228,27 @@ Las salas inactivas se descartan a las 6 horas.
 
 ### Despliegue
 
-Lo natural es **un único servidor Node** (`npm run build && npm start`) en algo
-tipo Railway, Render, Fly.io o un VPS: ahí la persistencia en disco cubre
-reinicios y despliegues.
+**En un servidor Node único** (Railway, Render, Fly.io, un VPS: `npm run build &&
+npm start`) no hay nada que configurar. La copia en disco cubre reinicios y
+despliegues.
 
-En *serverless* con varias instancias a la vez (Vercel escalando, por ejemplo)
-cada petición puede caer en un proceso distinto y ninguna copia en disco arregla
-eso; hace falta un almacén compartido. La interfaz que habría que reimplementar
-es pequeña: `getSession`/`saveSession`/`putSession` en `lib/store.ts` y
-`getRoom`/`saveRoom`/`putRoom` en `lib/engine/store.ts`.
+**En Vercel, Netlify o cualquier *serverless*** hace falta un almacén
+compartido: allí cada petición puede atenderla una instancia distinta, que no
+conoce la memoria ni el disco de las demás, así que una sala creada en una se
+pierde en la siguiente. La app lo detecta y lo avisa en pantalla.
+
+Se arregla en un minuto y sin tocar código, porque la app habla la API REST de
+Redis sin dependencias:
+
+1. En el panel de Vercel: **Storage → Create → Upstash Redis** (tiene plan
+   gratuito) y **Connect** al proyecto.
+2. Vuelve a desplegar.
+
+Eso inyecta las variables que la app busca sola: `KV_REST_API_URL` y
+`KV_REST_API_TOKEN` (o `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`).
+Si están, las salas viven ahí, con caducidad de 6 horas; si no están, todo sigue
+en memoria y disco como siempre.
+
+Una advertencia honesta: las escrituras van sin bloqueo, así que si dos personas
+juegan exactamente en el mismo instante desde instancias distintas, gana la
+última. En juegos por turnos, con un sondeo por segundo, no se nota.

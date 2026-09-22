@@ -1,4 +1,5 @@
 import { GAMES } from "@/lib/games/registry";
+import { needsSharedStore } from "@/lib/kv";
 import { seatsOf } from "./room";
 import type { LogEntry, PrivatePad, Room, RuleSection, Seat } from "./types";
 
@@ -24,6 +25,7 @@ export interface RoomView {
   pad: PrivatePad;
   log: LogEntry[];
   winner: { ids: string[]; label: string } | null;
+  needsSharedStore: boolean;
 }
 
 export function buildRoomView(room: Room, playerId: string | null): RoomView {
@@ -55,5 +57,6 @@ export function buildRoomView(room: Room, playerId: string | null): RoomView {
     pad: (playerId && room.pads[playerId]) || { text: "", marks: {} },
     log: room.log.slice(0, 30),
     winner: room.state ? game.winner(room.state) : null,
+    needsSharedStore: needsSharedStore(),
   };
 }

@@ -11,7 +11,17 @@ import CluedoBoard from "./games/CluedoBoard";
 import MonopolioBoard from "./games/MonopolioBoard";
 import Notepad from "./Notepad";
 import RulesButton, { RulesList } from "./RulesPanel";
-import { Avatar, Badge, Button, Card, Confetti, ErrorBar, Logo, OfflineBar } from "./ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Confetti,
+  ErrorBar,
+  Logo,
+  OfflineBar,
+  SetupWarning,
+} from "./ui";
 
 export default function Mesa({ code }: { code: string }) {
   const { view, status, error, setError, busy, offline, send, play } = useMesa(code);
@@ -151,6 +161,8 @@ export default function Mesa({ code }: { code: string }) {
   return (
     <main className="mx-auto w-full max-w-[92rem] px-4 py-6 sm:px-8">
       {header}
+
+      {view.needsSharedStore && <SetupWarning />}
 
       {view.phase === "finished" && view.winner && <Confetti />}
 

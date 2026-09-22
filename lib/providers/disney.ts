@@ -28,7 +28,7 @@ export async function fetchDisney(count: number): Promise<Character[]> {
   const out: Character[] = [];
   // Cuatro páginas a la vez: hay que mirar bastantes fichas para encontrar
   // personajes de verdad conocidos.
-  const pages = [randomInt(1, 100), randomInt(1, 100), randomInt(1, 100), randomInt(1, 100)];
+  const pages = Array.from({ length: 6 }, () => randomInt(1, 100));
   const results = await Promise.allSettled(
     pages.map((page) =>
       cached(`disney:page:${page}`, 60 * 60_000, () =>

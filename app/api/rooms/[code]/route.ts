@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { GameError } from "@/lib/game";
 import {
   addBot,
-  getRoom,
   joinRoom,
   removeBot,
   playAction,
@@ -11,7 +10,7 @@ import {
   startGame,
   writePad,
 } from "@/lib/engine/room";
-import { saveRoom } from "@/lib/engine/store";
+import { flushRooms, loadRoom, saveRoom } from "@/lib/engine/store";
 import { runBots } from "@/lib/engine/bots";
 import { buildRoomView } from "@/lib/engine/view";
 
@@ -30,7 +29,7 @@ export async function GET(
   ctx: RouteContext<"/api/rooms/[code]">,
 ) {
   const { code } = await ctx.params;
-  const room = getRoom(code);
+  const room = await loadRoom(code);
   if (!room) return Response.json({ error: "Mesa no encontrada" }, { status: 404 });
 
   const playerId = request.nextUrl.searchParams.get("playerId");
@@ -40,6 +39,7 @@ export async function GET(
   }
   // Los robots juegan al ritmo de las peticiones: sin temporizadores.
   if (runBots(room)) saveRoom(room);
+  await flushRooms();
   return Response.json({ view: buildRoomView(room, playerId) });
 }
 
@@ -48,7 +48,7 @@ export async function POST(
   ctx: RouteContext<"/api/rooms/[code]">,
 ) {
   const { code } = await ctx.params;
-  const room = getRoom(code);
+  const room = await loadRoom(code);
   if (!room) return Response.json({ error: "Mesa no encontrada" }, { status: 404 });
 
   let body: Body;
@@ -61,6 +61,7 @@ export async function POST(
   try {
     if (body.action === "join") {
       const player = joinRoom(room, body.name ?? "");
+      await flushRooms();
       return Response.json({
         playerId: player.id,
         view: buildRoomView(room, player.id),
@@ -100,6 +101,7 @@ export async function POST(
     }
 
     if (runBots(room)) saveRoom(room);
+    await flushRooms();
     return Response.json({ view: buildRoomView(room, player.id) });
   } catch (error) {
     const status = error instanceof GameError ? error.status : 500;

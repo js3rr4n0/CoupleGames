@@ -142,6 +142,21 @@ export function OfflineBar() {
   );
 }
 
+/** Aviso de configuración: sin almacén compartido las salas no aguantan. */
+export function SetupWarning() {
+  return (
+    <div className="mt-4 rounded-xl border-[3px] border-ink bg-tomato p-4 text-white shadow-hard-sm">
+      <p className="font-display text-lg">⚠️ Esta web necesita un almacén compartido</p>
+      <p className="mt-1 text-sm font-semibold">
+        Está desplegada en un alojamiento donde cada petición puede atenderla una
+        instancia distinta, así que las salas se pierden a los pocos segundos. En
+        el panel de Vercel: <strong>Storage → Create → Upstash Redis</strong> y
+        conéctalo al proyecto; el resto es automático.
+      </p>
+    </div>
+  );
+}
+
 export function Confetti() {
   const pieces = Array.from({ length: 30 });
   const colors = ["#ffc83d", "#ff4b4b", "#3d7bff", "#1fbf6b", "#ff7ab8"];

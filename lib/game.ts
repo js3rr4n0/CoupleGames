@@ -47,6 +47,7 @@ export function cleanName(raw: string): string {
 export function createSession(
   hostName: string,
   targetPlayers: number,
+  code?: string,
 ): { session: GameSession; player: Player } {
   const name = cleanName(hostName);
   const target = Math.min(12, Math.max(2, Math.round(targetPlayers) || 2));
@@ -64,7 +65,7 @@ export function createSession(
     lastSeen: now,
   };
   const session: GameSession = {
-    code: newCode(),
+    code: code ?? newCode(),
     createdAt: now,
     hostId: host.id,
     targetPlayers: target,
