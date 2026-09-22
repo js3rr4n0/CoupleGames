@@ -107,7 +107,7 @@ export default function CluedoBoard({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {state.die !== null && (
-              <Die value={state.die} spin={`${state.turn}-${state.stage}`} size={3.4} />
+              <Die value={state.die} spin={`${state.turn}-${state.stage}`} size="3.4rem" />
             )}
             {myTurn && state.stage === "tirar" && (
               <Button

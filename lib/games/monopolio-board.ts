@@ -131,3 +131,38 @@ export const CAJA: ChanceCard[] = [
   { id: "c13", text: "Derrama de la comunidad: paga 40 por casa y 115 por hotel", effect: { type: "reparaciones", casa: 40, hotel: 115 } },
   { id: "c14", text: "Devolución del impuesto: cobra 25", effect: { type: "cobrar", amount: 25 } },
 ];
+
+/**
+ * Nombre corto para el tablero. En una casilla de un dedo de ancho no cabe
+ * «Impuesto sobre el capital»; el nombre entero sigue estando en su ficha.
+ */
+const SHORT: Record<string, string> = {
+  "Impuesto sobre el capital": "Impuesto",
+  "Impuesto de lujo": "Lujo",
+  "Compañía de electricidad": "Luz",
+  "Compañía de aguas": "Aguas",
+  "Caja de comunidad": "Caja",
+  "Paseo de la Castellana": "Castellana",
+  "Paseo del Prado": "Prado",
+  "Parking gratuito": "Parking",
+  "Ve a la cárcel": "A la cárcel",
+};
+
+export function boardLabel(space: Space): string {
+  if (SHORT[space.name]) return SHORT[space.name];
+  // «Calle Salamanca» se lee igual de bien como «Salamanca» y cabe el doble;
+  // en las estaciones ya lo dice el 🚂, así que basta el nombre.
+  return space.name.replace(/^Calle /, "").replace(/^Estación (de )?/, "");
+}
+
+/**
+ * Cuerpo de letra para que el nombre quepa en su casilla sin partirse.
+ * Se mide en cqw (porcentaje del tablero), así que vale para cualquier tamaño.
+ */
+export function labelSize(label: string, vertical: boolean): string {
+  const longest = Math.max(...label.split(" ").map((word) => word.length));
+  // Ancho útil de la casilla: 9,09 cqw menos el borde y, de lado, la banda.
+  const box = vertical ? 7.1 : 8.7;
+  const fit = box / (longest * 0.58);
+  return `min(1.32cqw, ${fit.toFixed(2)}cqw)`;
+}

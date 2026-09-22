@@ -14,13 +14,14 @@ export function Die({
   value,
   spin,
   delay = 0,
-  size = 3.6,
+  size = "3.6rem",
 }: {
   value: number;
   /** Cambia en cada tirada para que la animación se repita. */
   spin: string | number;
   delay?: number;
-  size?: number;
+  /** Medida en cualquier unidad CSS: rem fuera del tablero, cqw encima de él. */
+  size?: string;
 }) {
   const pips = PIPS[value] ?? [];
   return (
@@ -29,12 +30,12 @@ export function Die({
       className="animate-tumble inline-grid shrink-0 grid-cols-3 grid-rows-3 rounded-xl border-[3px] border-ink bg-white shadow-hard-sm"
       style={{
         // Medidas fijas: los porcentajes dentro de un flex hacían crecer el dado.
-        width: `${size}rem`,
-        height: `${size}rem`,
-        minWidth: `${size}rem`,
-        minHeight: `${size}rem`,
-        padding: `${size * 0.11}rem`,
-        gap: `${size * 0.08}rem`,
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+        padding: `calc(${size} * 0.11)`,
+        gap: `calc(${size} * 0.08)`,
         animationDelay: `${delay}ms`,
       }}
       aria-label={`dado: ${value}`}

@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BOARD, GROUP_COLORS, type Space } from "@/lib/games/monopolio-board";
+import {
+  BOARD,
+  GROUP_COLORS,
+  boardLabel,
+  labelSize,
+  type Space,
+} from "@/lib/games/monopolio-board";
 import type { RoomView } from "@/lib/engine/view";
 import { play as sfx, useSfxOn } from "@/lib/sfx";
 import { Button, Card } from "../ui";
-import { Die, TOKEN_COLORS, Token } from "./monopolio/pieces";
+import { Deck, Die, TOKEN_COLORS, Token } from "./monopolio/pieces";
 
 interface MoneyFlow {
   id: string;
@@ -81,11 +87,20 @@ function sideOf(i: number): "abajo" | "izquierda" | "arriba" | "derecha" {
   return "derecha";
 }
 
-const BAND: Record<string, string> = {
-  abajo: "left-0 right-0 top-0 h-[20%] border-b-2",
-  izquierda: "top-0 bottom-0 right-0 w-[20%] border-l-2",
-  arriba: "left-0 right-0 bottom-0 h-[20%] border-t-2",
-  derecha: "top-0 bottom-0 left-0 w-[20%] border-r-2",
+/** Hacia dónde crece la casilla para que la banda de color mire al centro. */
+const FLOW: Record<string, "column" | "column-reverse" | "row" | "row-reverse"> = {
+  abajo: "column",
+  arriba: "column-reverse",
+  izquierda: "row-reverse",
+  derecha: "row",
+};
+
+/** Dónde se posan las fichas dentro de la casilla: siempre en el borde de dentro. */
+const TOKENS: Record<string, string> = {
+  abajo: "inset-x-0 top-0",
+  arriba: "inset-x-0 bottom-0",
+  izquierda: "inset-y-0 right-0 flex-col",
+  derecha: "inset-y-0 left-0 flex-col",
 };
 
 function kindEmoji(space: Space): string {
@@ -242,7 +257,7 @@ export default function MonopolioBoard({
             <Token
               emoji={emojiOf(state.turn)}
               color={colorOf(state.turn)}
-              size={2.6}
+              size="2.6rem"
               ring
             />
             <div>
@@ -357,10 +372,13 @@ export default function MonopolioBoard({
         >
           <div
             // Lo más grande que quepa en la pantalla sin tener que perseguirlo con el ratón.
-            className="relative mx-auto grid aspect-square w-full min-w-[36rem] max-w-[min(60rem,70vh)] gap-[3px]"
+            className="relative mx-auto grid aspect-square w-full min-w-[32rem] max-w-[min(64rem,76vh)] gap-[0.3%]"
             style={{
               gridTemplateColumns: "repeat(11, minmax(0, 1fr))",
               gridTemplateRows: "repeat(11, minmax(0, 1fr))",
+              // Las letras y las fichas se miden contra el tablero (cqw), así que
+              // todo crece y mengua junto y nada se sale de su casilla.
+              containerType: "size",
             }}
           >
             {BOARD.map((space) => {
@@ -370,169 +388,214 @@ export default function MonopolioBoard({
               const here = state.order.filter((id) => posOf(id) === space.i);
               const side = sideOf(space.i);
               const corner = space.i % 10 === 0;
+              const coste = space.price ?? space.tax ?? null;
               return (
                 <button
                   key={space.i}
+                  ref={space.i === followPos ? followed : undefined}
                   onClick={() => {
                     sfx("toc");
                     setDetail(space.i);
                   }}
-                  style={{ gridRow: row, gridColumn: col }}
+                  style={{ gridRow: row, gridColumn: col, flexDirection: FLOW[side] }}
                   title={space.price ? `${space.name} · ${space.price}€` : space.name}
-                  className={`group relative flex aspect-square flex-col overflow-hidden rounded-md border-2 border-ink text-left transition hover:z-10 hover:-translate-y-0.5 hover:shadow-hard-sm ${
+                  className={`relative flex aspect-square overflow-hidden rounded-md border-2 border-ink transition hover:z-10 hover:-translate-y-0.5 hover:shadow-hard-sm ${
                     owner ? "bg-paper-2" : corner ? "bg-paper" : "bg-white"
                   }`}
                 >
+                  {/* La banda de color es una franja de verdad, no algo encima:
+                      así nunca tapa el nombre ni el precio. */}
                   {space.group && (
                     <span
-                      className={`absolute border-ink ${BAND[side]}`}
-                      style={{ background: GROUP_COLORS[space.group] }}
+                      className="shrink-0 border-ink"
+                      style={{
+                        flex: "0 0 20%",
+                        background: GROUP_COLORS[space.group],
+                        borderBottomWidth: side === "abajo" ? 2 : 0,
+                        borderTopWidth: side === "arriba" ? 2 : 0,
+                        borderLeftWidth: side === "izquierda" ? 2 : 0,
+                        borderRightWidth: side === "derecha" ? 2 : 0,
+                      }}
                     />
                   )}
-                  {owner && (
-                    <span
-                      className="absolute inset-0 rounded-md"
-                      style={{ boxShadow: `inset 0 0 0 3px ${colorOf(owner)}` }}
-                    />
-                  )}
-                  <span
-                    className={`relative z-[1] px-1 text-[8px] font-extrabold leading-[1.15] sm:text-[10px] ${
-                      side === "abajo"
-                        ? "mt-[22%]"
-                        : side === "arriba"
-                          ? "mb-[22%] mt-0.5"
-                          : "mt-0.5"
-                    } ${side === "izquierda" ? "pr-[22%]" : side === "derecha" ? "pl-[22%]" : ""}`}
-                  >
-                    {corner || !space.price ? (
-                      <span className="block text-center text-base sm:text-xl">
+
+                  <span className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-[2%] px-[2%] text-center leading-[1.1]">
+                    {(corner || !space.price) && (
+                      <span style={{ fontSize: "2.4cqw", lineHeight: 1 }}>
                         {kindEmoji(space)}
                       </span>
-                    ) : null}
-                    {space.name}
-                  </span>
-                  <span
-                    className={`relative z-[1] mt-auto flex items-end justify-between gap-0.5 px-1 pb-0.5 ${
-                      side === "izquierda"
-                        ? "pr-[22%]"
-                        : side === "derecha"
-                          ? "pl-[22%]"
-                          : side === "arriba"
-                            ? "mb-[20%]"
-                            : ""
-                    }`}
-                  >
-                    <span className="text-[7px] font-extrabold text-ink-soft sm:text-[9px]">
-                      {space.price ? `${space.price}€` : space.tax ? `${space.tax}€` : ""}
+                    )}
+                    <span
+                      className="font-extrabold [overflow-wrap:anywhere]"
+                      style={{
+                        fontSize: labelSize(
+                          boardLabel(space),
+                          side === "izquierda" || side === "derecha",
+                        ),
+                      }}
+                    >
+                      {boardLabel(space)}
                     </span>
-                    <span className="flex items-center gap-[1px]">
-                      {prop?.houses ? (
-                        <span className="text-[8px] sm:text-[11px]">
-                          {prop.houses === 5 ? "🏨" : "🏠".repeat(prop.houses)}
-                        </span>
-                      ) : null}
-                      {prop?.mortgaged && (
-                        <span className="text-[8px] sm:text-[11px]">🏚️</span>
-                      )}
-                    </span>
+                    {coste !== null && (
+                      <span
+                        className="font-extrabold text-ink-soft"
+                        style={{ fontSize: "1.15cqw" }}
+                      >
+                        {coste}€
+                      </span>
+                    )}
+                    {(prop?.houses || prop?.mortgaged) && (
+                      <span style={{ fontSize: "1.5cqw", lineHeight: 1 }}>
+                        {prop.mortgaged
+                          ? "🏚️"
+                          : prop.houses === 5
+                            ? "🏨"
+                            : "🏠".repeat(prop.houses)}
+                      </span>
+                    )}
                   </span>
 
-                  <span className="absolute inset-x-0 bottom-0 z-[2] flex flex-wrap justify-center gap-[1px] pb-[2px]">
-                    {here.map((id) => (
-                      <Token
-                        key={id}
-                        emoji={emojiOf(id)}
-                        color={colorOf(id)}
-                        size={1.4}
-                        hop={walk?.id === id}
-                        ring={state.turn === id}
-                        title={nameOf(id)}
-                      />
-                    ))}
-                  </span>
+                  {/* El marco del color de quien la tiene. */}
+                  {owner && (
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-md"
+                      style={{ boxShadow: `inset 0 0 0 0.35cqw ${colorOf(owner)}` }}
+                    />
+                  )}
+
+                  {/* Las fichas se posan en el borde de dentro, sobre la banda. */}
+                  {here.length > 0 && (
+                    <span
+                      className={`pointer-events-none absolute z-[2] flex flex-wrap items-center justify-center gap-[1px] ${TOKENS[side]}`}
+                    >
+                      {here.map((id) => (
+                        <Token
+                          key={id}
+                          emoji={emojiOf(id)}
+                          color={colorOf(id)}
+                          size="2.3cqw"
+                          hop={walk?.id === id}
+                          ring={state.turn === id}
+                          title={nameOf(id)}
+                        />
+                      ))}
+                    </span>
+                  )}
                 </button>
               );
             })}
 
-            {/* El centro: logo, dados y la carta que acaba de salir. */}
+            {/* El centro del tablero: los dos mazos, el logo y los dados. */}
             <div
-              className="relative grid place-items-center rounded-2xl border-[3px] border-ink bg-paper p-3 text-center"
+              className="relative grid place-items-center overflow-hidden rounded-2xl border-[3px] border-ink bg-paper text-center"
               style={{ gridArea: "2 / 2 / 11 / 11" }}
             >
-              <div className="w-full">
-                <p className="font-display text-3xl sm:text-5xl">MONOPOLIO</p>
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.3em] text-ink-soft">
+              {/* Los mazos, puestos en diagonal como en el tablero de siempre. */}
+              <Deck
+                deck="suerte"
+                className="absolute"
+                style={{ top: "7%", right: "9%", transform: "rotate(9deg)" }}
+              />
+              <Deck
+                deck="caja"
+                className="absolute"
+                style={{ bottom: "7%", left: "9%", transform: "rotate(-9deg)" }}
+              />
+
+              <div className="relative z-[1] w-full px-[8%]">
+                <p className="font-display leading-none" style={{ fontSize: "6cqw" }}>
+                  MONOPOLIO
+                </p>
+                <p
+                  className="font-extrabold uppercase tracking-[0.35em] text-ink-soft"
+                  style={{ fontSize: "1.4cqw" }}
+                >
                   mesa de {state.order.length}
                 </p>
 
                 {state.dice && (
-                  <div className="mt-4 flex items-center justify-center gap-3">
-                    <Die value={state.dice[0]} spin={state.diceAt ?? 0} size={4.5} />
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ marginTop: "3cqw", gap: "1.6cqw" }}
+                  >
+                    <Die value={state.dice[0]} spin={state.diceAt ?? 0} size="7cqw" />
                     <Die
                       value={state.dice[1]}
                       spin={state.diceAt ?? 0}
-                      size={4.5}
+                      size="7cqw"
                       delay={110}
                     />
-                    <span className="rounded-xl border-[3px] border-ink bg-sun px-3 py-2 font-display text-3xl shadow-hard-sm">
+                    <span
+                      className="rounded-xl border-[3px] border-ink bg-sun font-display shadow-hard-sm"
+                      style={{ fontSize: "4cqw", padding: "0.4em 0.5em" }}
+                    >
                       {state.dice[0] + state.dice[1]}
                     </span>
                   </div>
                 )}
 
-                {showCard && state.lastCard && (
-                  <div
-                    key={state.lastCard.at}
-                    className={`animate-slam mx-auto mt-4 max-w-sm rounded-2xl border-[3px] border-ink p-4 shadow-hard ${
-                      state.lastCard.deck === "suerte" ? "bg-sun" : "bg-sky text-white"
-                    }`}
-                  >
-                    <p className="text-[11px] font-extrabold uppercase tracking-widest">
-                      {state.lastCard.deck === "suerte"
-                        ? "🍀 Suerte"
-                        : "📦 Caja de comunidad"}{" "}
-                      · {nameOf(state.lastCard.who)}
-                    </p>
-                    <p className="mt-1 font-display text-lg leading-tight">
-                      {state.lastCard.text}
-                    </p>
-                    <button
-                      onClick={() => setCardOpen(false)}
-                      className="mt-2 rounded-lg border-2 border-ink bg-white px-2 py-0.5 text-xs font-extrabold text-ink"
-                    >
-                      vale
-                    </button>
-                  </div>
-                )}
-
                 {/* Los billetes que vuelan cuando alguien cobra o paga. */}
-                <div className="pointer-events-none mt-3 flex flex-col items-center gap-1">
+                <div
+                  className="pointer-events-none flex flex-col items-center"
+                  style={{ marginTop: "2cqw", gap: "0.6cqw" }}
+                >
                   {fresh.map((flow) => {
                     const mineIn = flow.to === me;
                     const mineOut = flow.from === me;
                     return (
                       <span
                         key={flow.id}
-                        className={`animate-cash rounded-xl border-[3px] border-ink px-3 py-1 text-sm font-extrabold shadow-hard-sm ${
+                        className={`animate-cash rounded-xl border-[3px] border-ink font-extrabold shadow-hard-sm ${
                           mineIn
                             ? "bg-grass text-white"
                             : mineOut
                               ? "bg-tomato text-white"
                               : "bg-white"
                         }`}
+                        style={{ fontSize: "1.7cqw", padding: "0.3em 0.7em" }}
                       >
                         {flow.from ? nameOf(flow.from) : "La banca"} →{" "}
                         {flow.to ? nameOf(flow.to) : "la banca"} ·{" "}
                         {mineOut ? "−" : mineIn ? "+" : ""}
                         {flow.amount}€
-                        <span className="ml-1 font-semibold opacity-80">
-                          {flow.reason}
-                        </span>
+                        <span className="ml-1 font-semibold opacity-80">{flow.reason}</span>
                       </span>
                     );
                   })}
                 </div>
               </div>
+
+              {/* La carta que acaba de salir, encima de todo. */}
+              {showCard && state.lastCard && (
+                <div
+                  key={state.lastCard.at}
+                  className={`animate-slam absolute z-[2] rounded-2xl border-[3px] border-ink shadow-hard ${
+                    state.lastCard.deck === "suerte" ? "bg-sun" : "bg-sky text-white"
+                  }`}
+                  style={{ width: "62%", padding: "2.5cqw" }}
+                >
+                  <p
+                    className="font-extrabold uppercase tracking-widest"
+                    style={{ fontSize: "1.5cqw" }}
+                  >
+                    {state.lastCard.deck === "suerte" ? "🍀 Suerte" : "📦 Caja de comunidad"}{" "}
+                    · {nameOf(state.lastCard.who)}
+                  </p>
+                  <p
+                    className="mt-1 font-display leading-tight"
+                    style={{ fontSize: "2.6cqw" }}
+                  >
+                    {state.lastCard.text}
+                  </p>
+                  <button
+                    onClick={() => setCardOpen(false)}
+                    className="mt-2 rounded-lg border-2 border-ink bg-white font-extrabold text-ink"
+                    style={{ fontSize: "1.6cqw", padding: "0.25em 0.7em" }}
+                  >
+                    vale
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -712,7 +775,7 @@ export default function MonopolioBoard({
                       : "bg-paper"
                 }`}
               >
-                <Token emoji={emojiOf(player.id)} color={colorOf(player.id)} size={1.6} />
+                <Token emoji={emojiOf(player.id)} color={colorOf(player.id)} size="1.6rem" />
                 <span className="flex-1 text-sm font-extrabold">
                   {player.name}
                   {player.id === me && " (tú)"}
@@ -779,7 +842,7 @@ export default function MonopolioBoard({
                         <Token
                           emoji={emojiOf(state.props[String(detail)].owner!)}
                           color={colorOf(state.props[String(detail)].owner!)}
-                          size={1.3}
+                          size="1.3rem"
                         />
                         {nameOf(state.props[String(detail)].owner!)}
                       </>
