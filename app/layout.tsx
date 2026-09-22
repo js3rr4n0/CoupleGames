@@ -24,6 +24,11 @@ export const viewport: Viewport = {
   themeColor: "#fdf3e3",
   width: "device-width",
   initialScale: 1,
+  // Se puede hacer zoom: nadie debería quedarse sin leer una carta.
+  maximumScale: 5,
+  userScalable: true,
+  // Que el papel llegue hasta el borde en los móviles con muesca.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

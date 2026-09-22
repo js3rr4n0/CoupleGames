@@ -100,7 +100,8 @@ export function Logo({ compact = false }: { compact?: boolean }) {
         ?
       </span>
       {!compact && (
-        <span className="leading-tight">
+        // En el móvil manda el espacio: se queda solo el icono.
+        <span className="hidden leading-tight sm:block">
           <span className="block font-display text-xl">CoupleGames</span>
           <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-ink-soft">
             juegos para jugar juntos

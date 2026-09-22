@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import type { RoomView } from "@/lib/engine/view";
+import { play as sfx, useSfxOn } from "@/lib/sfx";
 import { Button, Card } from "../ui";
 
 interface Ship {
@@ -50,6 +51,22 @@ export default function BatallaBoard({
   const me = view.you?.id ?? null;
   const [selected, setSelected] = useState<string>("portaaviones");
   const [horizontal, setHorizontal] = useState(true);
+  // En el móvil solo cabe un mar a la vez: se enseña el que toca.
+  const [tab, setTab] = useState<"mia" | "enemiga">("mia");
+  const [seenStage, setSeenStage] = useState(state.stage);
+  if (seenStage !== state.stage) {
+    setSeenStage(state.stage);
+    setTab(state.stage === "combate" ? "enemiga" : "mia");
+  }
+
+  const myTurn = state.turn === me && state.stage === "combate" && !state.winnerId;
+  const lastShot = state.lastShot;
+  useSfxOn(
+    lastShot ? `${lastShot.by}-${lastShot.row}-${lastShot.col}` : null,
+    lastShot ? (lastShot.result === "agua" ? "carta" : "pago") : null,
+  );
+  useSfxOn(state.winnerId, state.winnerId ? "victoria" : null);
+  useSfxOn(myTurn ? "si" : "no", myTurn ? "turno" : null);
 
   if (!state.you) {
     return (
@@ -69,8 +86,6 @@ export default function BatallaBoard({
       ship.cells.map(([r, c]) => `${r},${c}`),
     ),
   );
-  const myTurn = state.turn === me && state.stage === "combate" && !state.winnerId;
-
   return (
     <div className="space-y-4">
       {state.stage === "colocando" ? (
@@ -121,8 +136,38 @@ export default function BatallaBoard({
         </Card>
       ) : null}
 
+      {/* Pestañas solo en pantallas estrechas: en grande se ven los dos mares. */}
+      <div className="grid grid-cols-2 gap-2 lg:hidden">
+        {(
+          [
+            ["mia", `🌊 Tu mar · ${mine.remaining}`],
+            ["enemiga", `🎯 Mar de ${state.rivalName ?? "…"}`],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => {
+              sfx("toc");
+              setTab(id);
+            }}
+            className={`press rounded-xl border-[3px] border-ink px-3 py-3 text-sm font-extrabold shadow-hard-sm ${
+              tab === id ? "bg-sun" : "bg-white"
+            }`}
+          >
+            {label}
+            {id === "enemiga" && myTurn && (
+              <span className="ml-1 rounded border-2 border-ink bg-tomato px-1 text-[10px] text-white">
+                ¡dispara!
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="overflow-hidden p-0">
+        <Card
+          className={`overflow-hidden p-0 lg:block ${tab === "mia" ? "block" : "hidden"}`}
+        >
           <div className="flex items-center justify-between border-b-[3px] border-ink bg-paper-2 px-4 py-2.5">
             <h3 className="font-display text-lg">Tu mar 🌊</h3>
             <span className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
@@ -162,7 +207,9 @@ export default function BatallaBoard({
           />
         </Card>
 
-        <Card className="overflow-hidden p-0">
+        <Card
+          className={`overflow-hidden p-0 lg:block ${tab === "enemiga" ? "block" : "hidden"}`}
+        >
           <div className="flex items-center justify-between border-b-[3px] border-ink bg-ink px-4 py-2.5 text-white">
             <h3 className="font-display text-lg">
               Mar de {state.rivalName ?? "…"} 🎯
@@ -174,7 +221,7 @@ export default function BatallaBoard({
           <Grid
             onCell={(row, col) =>
               myTurn && !state.enemy?.grid[row][col]
-                ? play({ type: "disparo", row, col })
+                ? (sfx("toc"), play({ type: "disparo", row, col }))
                 : undefined
             }
             render={(row, col) => {
@@ -232,8 +279,10 @@ function Grid({
   onCell: (row: number, col: number) => void;
 }) {
   return (
-    <div className="p-3">
-      <div className="grid grid-cols-[1.2rem_repeat(10,1fr)] gap-[2px] text-[10px] font-extrabold text-ink-soft">
+    // Por estrecho que sea el móvil, cada casilla mantiene un tamaño que se
+    // puede tocar sin fallar; si no cabe, el mar se desliza de lado.
+    <div className="scroll-soft overflow-x-auto p-2 sm:p-3">
+      <div className="mx-auto grid w-full min-w-[20rem] max-w-[30rem] grid-cols-[1rem_repeat(10,1fr)] gap-[2px] text-[10px] font-extrabold text-ink-soft sm:grid-cols-[1.2rem_repeat(10,1fr)]">
         <span />
         {LETTERS.map((letter) => (
           <span key={letter} className="text-center">

@@ -148,7 +148,7 @@ export default function UnoBoard({
               >
                 <span
                   className="absolute block"
-                  style={{ left: "-0.5em", fontSize: "5cqw", transform: "translateY(4.6em)" }}
+                  style={{ left: "-0.5em", fontSize: "4.5cqw", transform: "translateY(5.6em)" }}
                 >
                   🔻
                 </span>
@@ -331,40 +331,36 @@ export default function UnoBoard({
             </Button>
           </div>
         </div>
-        <div className="scroll-soft overflow-x-auto px-4 pb-6 pt-8">
-          <div className="mx-auto flex w-max items-end">
-            {state.hand.map((card, index, list) => {
-              const usable =
-                myTurn && playable.has(card.id) && (!mustUsePending || card.id === state.pendingCardId);
-              const middle = (list.length - 1) / 2;
-              const spread = Math.min(4, 40 / Math.max(list.length, 1));
-              const angle = (index - middle) * spread;
-              return (
-                <button
-                  key={card.id}
-                  onClick={() => attempt(card)}
-                  disabled={!usable}
-                  title={usable ? "Jugar esta carta" : "Esta no se puede jugar ahora"}
-                  className={`animate-deal -ml-5 origin-bottom transition-transform first:ml-0 ${
-                    usable ? "hover:-translate-y-4 hover:z-10" : "opacity-45"
-                  }`}
-                  style={{
-                    transform: `rotate(${angle}deg) translateY(${Math.abs(angle) * 0.9}px)`,
-                    zIndex: index,
-                  }}
-                >
-                  <CardFace
-                    card={card}
-                    width="5rem"
-                    className={usable ? "shadow-hard-sm" : ""}
-                  />
-                </button>
-              );
-            })}
-            {!state.hand.length && (
-              <p className="py-6 font-bold text-ink-soft">Sin cartas. 🎉</p>
-            )}
-          </div>
+        {/* Sin solapes: en el móvil las cartas se reparten en filas y cada una
+            es un blanco cómodo para el pulgar. */}
+        <div className="flex flex-wrap items-end justify-center gap-1.5 px-3 py-5 sm:gap-2">
+          {state.hand.map((card) => {
+            const usable =
+              myTurn &&
+              playable.has(card.id) &&
+              (!mustUsePending || card.id === state.pendingCardId);
+            return (
+              <button
+                key={card.id}
+                onClick={() => attempt(card)}
+                disabled={!usable}
+                title={usable ? "Jugar esta carta" : "Esta no se puede jugar ahora"}
+                className={`animate-deal origin-bottom transition-transform ${
+                  usable ? "hover:-translate-y-3" : "opacity-45"
+                }`}
+                style={{ transform: `rotate(${jitter(`m${card.id}`, 3)}deg)` }}
+              >
+                <CardFace
+                  card={card}
+                  width="clamp(3.1rem, 15vw, 4.8rem)"
+                  className={usable ? "shadow-hard-sm" : ""}
+                />
+              </button>
+            );
+          })}
+          {!state.hand.length && (
+            <p className="py-6 font-bold text-ink-soft">Sin cartas. 🎉</p>
+          )}
         </div>
         {myTurn && !mustUsePending && !state.playable.length && (
           <p className="border-t-2 border-ink/15 bg-sun px-4 py-2 text-sm font-bold">

@@ -64,6 +64,9 @@ export default function CluedoBoard({
   const [suspect, setSuspect] = useState(SUSPECTS[0].id);
   const [weapon, setWeapon] = useState(WEAPONS[0].id);
   const [accusing, setAccusing] = useState(false);
+  // En el móvil no caben los cinco paneles a la vez: se pasa de uno a otro.
+  const [tab, setTab] = useState<"mansion" | "cartas" | "libreta" | "mesa">("mansion");
+  const panel = (id: typeof tab) => `${tab === id ? "block" : "hidden"} lg:block`;
   const [accRoom, setAccRoom] = useState(ROOMS[0].id);
 
   const nameOf = (id: string) => view.players.find((p) => p.id === id)?.name ?? "?";
@@ -185,8 +188,33 @@ export default function CluedoBoard({
         />
       )}
 
+      <div className="grid grid-cols-4 gap-1.5 lg:hidden">
+        {(
+          [
+            ["mansion", "🏚️", "Mansión"],
+            ["cartas", "🔒", "Tus cartas"],
+            ["libreta", "🗂️", "Libreta"],
+            ["mesa", "👀", "La mesa"],
+          ] as const
+        ).map(([id, emoji, label]) => (
+          <button
+            key={id}
+            onClick={() => {
+              play("toc");
+              setTab(id);
+            }}
+            className={`rounded-xl border-[3px] border-ink px-1 py-2 text-[11px] font-extrabold leading-tight shadow-hard-sm ${
+              tab === id ? "bg-sun" : "bg-white"
+            }`}
+          >
+            <span className="block text-base">{emoji}</span>
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Card className="overflow-hidden p-0">
+        <Card className={`overflow-hidden p-0 ${panel("mansion")}`}>
           <div className="flex items-center justify-between border-b-[3px] border-ink bg-ink px-4 py-2.5 text-white">
             <h3 className="font-display text-lg">🏚️ La mansión</h3>
             <span className="text-[11px] font-extrabold uppercase tracking-widest">
@@ -270,8 +298,12 @@ export default function CluedoBoard({
           </div>
         </Card>
 
-        <div className="space-y-4">
-          <Card className="overflow-hidden p-0">
+        <div
+          className={`space-y-4 lg:block ${
+            tab === "cartas" || tab === "mesa" ? "block" : "hidden"
+          }`}
+        >
+          <Card className={`overflow-hidden p-0 ${panel("cartas")}`}>
             <div className="flex items-center justify-between border-b-[3px] border-ink bg-grape px-4 py-2.5 text-white">
               <h3 className="font-display text-lg">🔒 Tus cartas</h3>
               <span className="text-[11px] font-extrabold uppercase tracking-widest">
@@ -306,7 +338,7 @@ export default function CluedoBoard({
             </p>
           </Card>
 
-          <Card className="overflow-hidden p-0">
+          <Card className={`overflow-hidden p-0 ${panel("cartas")}`}>
             <div className="border-b-[3px] border-ink bg-white px-4 py-2.5">
               <h3 className="font-display text-lg">🔒 Lo que te han enseñado</h3>
             </div>
@@ -337,7 +369,7 @@ export default function CluedoBoard({
             )}
           </Card>
 
-          <Card className="overflow-hidden p-0">
+          <Card className={`overflow-hidden p-0 ${panel("mesa")}`}>
             <div className="border-b-[3px] border-ink bg-paper-2 px-4 py-2.5">
               <h3 className="font-display text-lg">👀 Sospechas de la mesa</h3>
             </div>
@@ -374,19 +406,21 @@ export default function CluedoBoard({
         </div>
       </div>
 
-      <Notebook
-        players={view.players.map((player) => ({
-          id: player.id,
-          name: player.name,
-          emoji: player.emoji,
-        }))}
-        me={me}
-        hand={state.hand}
-        reveals={state.reveals}
-        history={state.history}
-        marks={marks}
-        onMark={onMark}
-      />
+      <div className={panel("libreta")}>
+        <Notebook
+          players={view.players.map((player) => ({
+            id: player.id,
+            name: player.name,
+            emoji: player.emoji,
+          }))}
+          me={me}
+          hand={state.hand}
+          reveals={state.reveals}
+          history={state.history}
+          marks={marks}
+          onMark={onMark}
+        />
+      </div>
 
       {state.solution && (
         <Card className="animate-pop overflow-hidden p-0" tone="sun">

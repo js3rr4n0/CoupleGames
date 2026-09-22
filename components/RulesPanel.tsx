@@ -36,8 +36,13 @@ export default function RulesButton({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant="plain" className="px-3 py-2 text-sm" onClick={() => setOpen(true)}>
-        📖 Reglas
+      <Button
+        variant="plain"
+        className="px-3 py-2 text-sm"
+        onClick={() => setOpen(true)}
+        title="Ver las reglas"
+      >
+        📖 <span className="hidden sm:inline">Reglas</span>
       </Button>
       {open && (
         <div

@@ -168,6 +168,10 @@
 @layer base {
   body {
     background-color: var(--color-paper);
+    /* En los móviles con muesca, el contenido no se mete debajo del sistema. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%2317151f' fill-opacity='0.1'/%3E%3C/svg%3E");
     color: var(--color-ink);
     min-height: 100dvh;

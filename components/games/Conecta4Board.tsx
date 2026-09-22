@@ -1,6 +1,7 @@
 "use client";
 
 import type { RoomView } from "@/lib/engine/view";
+import { play as sfx, useSfxOn } from "@/lib/sfx";
 import { Card } from "../ui";
 
 interface C4View {
@@ -28,23 +29,27 @@ export default function Conecta4Board({
   const myTurn = state.turn === me && !state.winnerId && !state.draw;
   const winning = new Set((state.line ?? []).map(([r, c]) => `${r},${c}`));
   const seatOf = (id: string) => state.order.indexOf(id);
-  const emojiOf = (id: string) =>
-    view.players.find((p) => p.id === id)?.emoji ?? "⬤";
+  const nameOf = (id: string) => view.players.find((p) => p.id === id)?.name ?? "…";
+  const emojiOf = (id: string) => view.players.find((p) => p.id === id)?.emoji ?? "⬤";
 
   const columnFull = (col: number) => state.board.every((row) => row[col]);
+
+  useSfxOn(state.lastDrop ? `${state.lastDrop.row}-${state.lastDrop.col}` : null, "ficha");
+  useSfxOn(state.winnerId, state.winnerId ? "victoria" : null);
+  useSfxOn(myTurn ? "si" : "no", myTurn ? "turno" : null);
 
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-ink bg-sky px-5 py-3 text-white">
-          <p className="font-display text-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-ink bg-sky px-4 py-3 text-white sm:px-5">
+          <p className="font-display text-lg sm:text-xl">
             {state.winnerId
-              ? `Gana ${view.players.find((p) => p.id === state.winnerId)?.name}`
+              ? `Gana ${nameOf(state.winnerId)}`
               : state.draw
                 ? "Tablas"
                 : myTurn
-                  ? "Te toca: elige columna"
-                  : `Turno de ${view.players.find((p) => p.id === state.turn)?.name ?? "…"}`}
+                  ? "Te toca: toca una columna"
+                  : `Turno de ${nameOf(state.turn)}`}
           </p>
           <div className="flex gap-2">
             {state.order.map((id, index) => (
@@ -54,56 +59,67 @@ export default function Conecta4Board({
                   state.turn === id && !state.winnerId ? "" : "opacity-60"
                 }`}
               >
-                {emojiOf(id)} {view.players.find((p) => p.id === id)?.name}
+                {emojiOf(id)} {nameOf(id)}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="p-4 sm:p-6">
-          <div className="mx-auto w-fit rounded-2xl border-[3px] border-ink bg-sky p-2 shadow-hard-sm sm:p-3">
+        <div className="p-3 sm:p-6">
+          {/* Cada columna entera es un botón: en el móvil se acierta con el pulgar. */}
+          <div className="mx-auto w-full max-w-[34rem] rounded-2xl border-[3px] border-ink bg-sky p-2 shadow-hard-sm sm:p-3">
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-              {Array.from({ length: 7 }).map((_, col) => (
-                <button
-                  key={`head-${col}`}
-                  disabled={!myTurn || columnFull(col)}
-                  onClick={() => play({ type: "drop", col })}
-                  className={`h-7 rounded-lg border-2 border-ink text-xs font-extrabold transition disabled:opacity-30 ${
-                    myTurn && !columnFull(col)
-                      ? "bg-white hover:-translate-y-0.5 hover:bg-sun"
-                      : "bg-white/60"
-                  }`}
-                  aria-label={`Soltar en la columna ${col + 1}`}
-                >
-                  ▼
-                </button>
-              ))}
-
-              {state.board.map((row, r) =>
-                row.map((cell, c) => {
-                  const isLast =
-                    state.lastDrop?.row === r && state.lastDrop?.col === c;
-                  const isWin = winning.has(`${r},${c}`);
-                  return (
-                    <div
-                      key={`${r}-${c}`}
-                      className="grid h-10 w-10 place-items-center rounded-full border-[3px] border-ink bg-paper sm:h-14 sm:w-14"
+              {Array.from({ length: 7 }).map((_, col) => {
+                const usable = myTurn && !columnFull(col);
+                return (
+                  <button
+                    key={col}
+                    disabled={!usable}
+                    onClick={() => {
+                      sfx("ficha");
+                      play({ type: "drop", col });
+                    }}
+                    aria-label={`Soltar en la columna ${col + 1}`}
+                    className={`flex flex-col gap-1.5 rounded-xl transition sm:gap-2 ${
+                      usable ? "cursor-pointer hover:bg-white/25" : "cursor-default"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-6 place-items-center rounded-md border-2 border-ink text-[10px] font-extrabold sm:h-7 sm:text-xs ${
+                        usable ? "bg-white" : "bg-white/40 text-ink/40"
+                      }`}
                     >
-                      {cell && (
+                      ▼
+                    </span>
+                    {state.board.map((row, r) => {
+                      const cell = row[col];
+                      const isLast =
+                        state.lastDrop?.row === r && state.lastDrop?.col === col;
+                      const isWin = winning.has(`${r},${col}`);
+                      return (
                         <span
-                          className={`grid h-full w-full place-items-center rounded-full border-[3px] border-ink text-base sm:text-xl ${
-                            DISC[seatOf(cell)]
-                          } ${isLast ? "animate-drop" : ""} ${
-                            isWin ? "ring-4 ring-ink ring-offset-2 ring-offset-paper" : ""
-                          }`}
+                          key={r}
+                          className="grid aspect-square w-full place-items-center rounded-full border-[3px] border-ink bg-paper"
                         >
-                          {emojiOf(cell)}
+                          {cell && (
+                            <span
+                              className={`grid h-full w-full place-items-center rounded-full border-[3px] border-ink text-sm sm:text-xl ${
+                                DISC[seatOf(cell)]
+                              } ${isLast ? "animate-drop" : ""} ${
+                                isWin
+                                  ? "ring-4 ring-ink ring-offset-2 ring-offset-paper"
+                                  : ""
+                              }`}
+                            >
+                              {emojiOf(cell)}
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </div>
-                  );
-                }),
-              )}
+                      );
+                    })}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

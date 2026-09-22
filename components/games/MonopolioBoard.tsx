@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BOARD, GROUP_COLORS, type Space } from "@/lib/games/monopolio-board";
 import type { RoomView } from "@/lib/engine/view";
 import { play as sfx, useSfxOn } from "@/lib/sfx";
@@ -173,6 +173,20 @@ export default function MonopolioBoard({
 
   const posOf = (id: string) => (walk && walk.id === id ? walk.pos : state.positions[id]);
 
+  /* --------- en el móvil el tablero sigue a la ficha que se mueve --------- */
+  const scroller = useRef<HTMLDivElement>(null);
+  const followed = useRef<HTMLButtonElement | null>(null);
+  const followPos = posOf(walk ? walk.id : (me ?? state.order[0]));
+
+  useEffect(() => {
+    const box = scroller.current;
+    const cell = followed.current;
+    if (!box || !cell) return;
+    if (box.scrollWidth <= box.clientWidth + 4) return;
+    const target = cell.offsetLeft + cell.offsetWidth / 2 - box.clientWidth / 2;
+    box.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [followPos]);
+
   /* ---------------- dinero que cambia de manos ---------------- */
   // Cada cobro o pago nuevo sale volando una sola vez y se retira solo.
   const flows = state.flows ?? [];
@@ -337,7 +351,10 @@ export default function MonopolioBoard({
       {/* ----------------------------- EL TABLERO ----------------------------- */}
       <Card className="relative overflow-hidden p-2 sm:p-4">
         {/* En el móvil el tablero no se encoge hasta ser ilegible: se desliza. */}
-        <div className="scroll-soft -mx-1 w-[calc(100%+0.5rem)] max-w-[calc(100%+0.5rem)] overflow-x-auto px-1 pb-2">
+        <div
+          ref={scroller}
+          className="scroll-soft -mx-1 w-[calc(100%+0.5rem)] max-w-[calc(100%+0.5rem)] overflow-x-auto px-1 pb-2"
+        >
           <div
             // Lo más grande que quepa en la pantalla sin tener que perseguirlo con el ratón.
             className="relative mx-auto grid aspect-square w-full min-w-[36rem] max-w-[min(60rem,70vh)] gap-[3px]"

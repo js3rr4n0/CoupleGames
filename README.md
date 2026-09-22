@@ -139,6 +139,28 @@ libreta privada, reglas dentro del juego y revancha sin salir de la sala.
 | 🕵️ **Cluedo** | 3-6 | 21 cartas, solución oculta, mansión con pasadizos, **tutorial de 30 segundos**, una barra que dice en todo momento qué toca hacer y una **libreta que deduce contigo**. |
 | 🏦 **Monopolio** | 2-6 | Tablero grande y legible, **dados que ruedan**, **ficha que recorre casilla a casilla**, cartas de Suerte a pantalla, cada cobro y cada pago anunciados, alquileres, casas, hipotecas, cárcel, deudas, quiebras y tratos. |
 
+### Todo se juega desde el móvil
+
+La mesa está pensada para el teléfono primero, y cada juego se adapta a lo que
+hay de pantalla:
+
+- **Conecta 4**: la columna entera es el botón, no una flechita.
+- **Batalla naval**: en el móvil los dos mares van en pestañas y se cambia solo
+  al tuyo cuando colocas y al del rival cuando toca disparar.
+- **UNO**: la mesa se mide contra sí misma (container queries), así que se
+  encoge entera sin que nada se salga, y la mano se reparte en filas sin
+  solapes: cada carta es un blanco cómodo.
+- **Cluedo**: mansión, cartas, libreta y sospechas de la mesa van en cuatro
+  pestañas en vez de una página de cuatro metros.
+- **Monopolio**: el tablero no se encoge hasta ser ilegible, se desliza de lado
+  y **se mueve solo para seguir a la ficha** que está jugando.
+- La cabecera se queda en iconos, el papel llega hasta el borde en los móviles
+  con muesca y se puede hacer zoom (nadie debería quedarse sin leer una carta).
+
+Comprobado a 320 px, 390 px, tumbado y en tableta: ninguna pantalla obliga a
+desplazarse de lado, salvo los dos tableros que lo hacen a propósito dentro de
+su propia caja.
+
 ### La mesa se oye y se mueve
 
 Hay sonido de mesa —dados, cartas, monedas, la ficha saltando— y se puede

@@ -47,6 +47,9 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `50-monopolio-comprar.png` | Monopolio: la decisión de comprar, bien grande |
 | `51-monopolio-tablero.png` | Monopolio: fichas de colores y propiedades con dueño |
 | `52-monopolio-completo.png` | Monopolio: tablero, cartera, propiedades y mesa |
-| `53-uno-movil.png` | UNO en móvil: la mesa se encoge entera |
-| `54-monopolio-movil.png` | Monopolio en móvil: el tablero se desliza |
-| `55-cluedo-movil.png` | Cluedo en móvil |
+| `56-conecta4-movil.png` | Conecta 4 en móvil: la columna entera es el botón |
+| `57-batalla-movil.png` | Batalla naval en móvil: un mar por pestaña |
+| `58-uno-movil.png` | UNO en móvil: la mano en filas, sin solapes |
+| `59-cluedo-movil.png` | Cluedo en móvil: cuatro pestañas |
+| `60-cluedo-libreta-movil.png` | La libreta del Cluedo en móvil |
+| `61-monopolio-movil.png` | Monopolio en móvil: el tablero sigue a tu ficha |

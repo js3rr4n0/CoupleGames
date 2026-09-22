@@ -82,12 +82,12 @@ export default function Mesa({ code }: { code: string }) {
       <Link href="/">
         <Logo />
       </Link>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Badge>
-          {view.gameEmoji} {view.gameName}
+          {view.gameEmoji} <span className="hidden sm:inline">{view.gameName}</span>
         </Badge>
         <Badge className="font-display tracking-[0.2em]">{view.code}</Badge>
-        <div className="flex gap-1">
+        <div className="hidden gap-1 sm:flex">
           {view.players.slice(0, 6).map((player) => (
             <Avatar
               key={player.id}
@@ -99,8 +99,14 @@ export default function Mesa({ code }: { code: string }) {
         </div>
         <RulesButton name={view.gameName} emoji={view.gameEmoji} rules={view.rules} />
         <SoundToggle />
-        <Button variant="plain" className="px-3 py-2 text-sm" onClick={share}>
-          {copied ? "¡Copiado!" : "Invitar"}
+        <Button
+          variant="plain"
+          className="px-3 py-2 text-sm"
+          onClick={share}
+          title="Copiar el enlace de la mesa"
+        >
+          {copied ? "¡Copiado!" : <span className="sm:hidden">🔗</span>}
+          <span className="hidden sm:inline">{copied ? "" : "Invitar"}</span>
         </Button>
       </div>
     </header>
