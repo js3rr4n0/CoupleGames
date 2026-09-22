@@ -10,6 +10,14 @@ export interface MesaResult {
   code?: string;
 }
 
+class RequestError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function post(path: string, body: unknown): Promise<MesaResult> {
   const res = await fetch(path, {
     method: "POST",
@@ -17,7 +25,8 @@ async function post(path: string, body: unknown): Promise<MesaResult> {
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as MesaResult;
-  if (!res.ok) throw new Error(data.error ?? "No pudimos completar la jugada.");
+  if (!res.ok)
+    throw new RequestError(data.error ?? "No pudimos completar la jugada.", res.status);
   return data;
 }
 
@@ -122,6 +131,30 @@ export function useMesa(code: string) {
         if (data.view) setView(data.view);
         return data;
       } catch (err) {
+        // Mismo criterio que en «¿Quién soy?»: un fallo de conexión se reintenta
+        // solo, y la sala perdida se muestra como «reconectando», no como error.
+        if (err instanceof RequestError && err.status >= 500) {
+          setOffline(true);
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          try {
+            const retry = await post(`/api/rooms/${code}`, {
+              action,
+              playerId: playerRef.current,
+              ...payload,
+            });
+            if (retry.view) {
+              setView(retry.view);
+              setOffline(false);
+              return retry;
+            }
+          } catch {
+            /* sigue sin ir */
+          }
+        }
+        if (err instanceof RequestError && err.status === 404) {
+          setOffline(true);
+          throw err;
+        }
         const message = err instanceof Error ? err.message : "Error inesperado";
         setError(message);
         throw err;

@@ -210,14 +210,30 @@ npm run lint                 # eslint
 npm run typecheck            # tsc --noEmit
 ```
 
-## Despliegue
+## Dónde viven las salas
 
-Las sesiones viven en memoria del proceso, así que la app necesita ejecutarse
-como **un único servidor Node** (`npm run build && npm start`) en algo tipo
-Railway, Render, Fly.io o un VPS. En un entorno *serverless* con varias
-instancias (por ejemplo Vercel con escalado) cada petición podría caer en un
-proceso distinto y perder la sala: para ese caso basta con reemplazar
-`lib/store.ts` por Redis/Upstash manteniendo la misma interfaz
-(`getSession`, `saveSession`, `putSession`).
+Las salas están en memoria para ir rápidas, pero se copian a disco en cuanto
+cambia algo (con un retardo de 0,7 s para no escribir en cada clic). Al arrancar,
+el servidor las vuelve a cargar tal cual estaban: **un reinicio o un despliegue
+ya no se lleva por delante una partida a medias**. Está probado matando el
+proceso con `kill -9` en mitad de una ronda.
 
-Las salas inactivas se descartan automáticamente a las 6 horas.
+Los ficheros van a `.couplegames-data/` (configurable con
+`COUPLEGAMES_DATA_DIR`, y con el directorio temporal del sistema como
+alternativa si esa carpeta no se puede escribir). No se versionan y contienen el
+estado de las partidas, incluidos los personajes secretos: son datos del
+servidor, igual que la memoria.
+
+Las salas inactivas se descartan a las 6 horas.
+
+### Despliegue
+
+Lo natural es **un único servidor Node** (`npm run build && npm start`) en algo
+tipo Railway, Render, Fly.io o un VPS: ahí la persistencia en disco cubre
+reinicios y despliegues.
+
+En *serverless* con varias instancias a la vez (Vercel escalando, por ejemplo)
+cada petición puede caer en un proceso distinto y ninguna copia en disco arregla
+eso; hace falta un almacén compartido. La interfaz que habría que reimplementar
+es pequeña: `getSession`/`saveSession`/`putSession` en `lib/store.ts` y
+`getRoom`/`saveRoom`/`putRoom` en `lib/engine/store.ts`.

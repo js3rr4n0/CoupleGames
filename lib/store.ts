@@ -1,4 +1,5 @@
 import type { GameSession } from "./types";
+import { readSnapshot, scheduleSnapshot } from "./persist";
 
 /**
  * Sessions live in memory on the server: no database, no API keys, nothing for
@@ -9,7 +10,19 @@ const globalStore = globalThis as unknown as {
 };
 
 const SESSIONS: Map<string, GameSession> =
-  globalStore.__coupleGames ?? (globalStore.__coupleGames = new Map());
+  globalStore.__coupleGames ?? (globalStore.__coupleGames = hydrate());
+
+function hydrate(): Map<string, GameSession> {
+  const map = new Map<string, GameSession>();
+  for (const session of readSnapshot<GameSession>("sessions")) {
+    if (session?.code) map.set(session.code, session);
+  }
+  return map;
+}
+
+function persist(): void {
+  scheduleSnapshot("sessions", () => [...SESSIONS.values()]);
+}
 
 const MAX_IDLE_MS = 6 * 60 * 60 * 1000;
 
@@ -38,17 +51,24 @@ export function saveSession(session: GameSession): void {
   session.lastActivity = Date.now();
   session.version += 1;
   SESSIONS.set(session.code, session);
+  persist();
 }
 
 export function putSession(session: GameSession): void {
   SESSIONS.set(session.code, session);
+  persist();
 }
 
 export function sweep(): void {
   const now = Date.now();
+  let removed = false;
   for (const [code, session] of SESSIONS) {
-    if (now - session.lastActivity > MAX_IDLE_MS) SESSIONS.delete(code);
+    if (now - session.lastActivity > MAX_IDLE_MS) {
+      SESSIONS.delete(code);
+      removed = true;
+    }
   }
+  if (removed) persist();
 }
 
 export function sessionCount(): number {

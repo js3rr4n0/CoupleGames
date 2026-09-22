@@ -10,6 +10,14 @@ export interface ApiResult {
   playerId?: string;
 }
 
+class RequestError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function post(path: string, body: unknown): Promise<ApiResult> {
   const res = await fetch(path, {
     method: "POST",
@@ -17,7 +25,8 @@ async function post(path: string, body: unknown): Promise<ApiResult> {
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as ApiResult;
-  if (!res.ok) throw new Error(data.error ?? "No pudimos completar la acción.");
+  if (!res.ok)
+    throw new RequestError(data.error ?? "No pudimos completar la acción.", res.status);
   return data;
 }
 
@@ -140,6 +149,30 @@ export function useSession(code: string) {
         if (data.view) setView(data.view);
         return data;
       } catch (err) {
+        // Si la sala no contesta (servidor reiniciándose, red que parpadea) se
+        // reintenta una vez en silencio antes de molestar con un aviso.
+        if (err instanceof RequestError && err.status >= 500) {
+          setOffline(true);
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          try {
+            const retry = await post(`/api/sessions/${code}`, {
+              action,
+              playerId: playerRef.current,
+              ...payload,
+            });
+            if (retry.view) {
+              setView(retry.view);
+              setOffline(false);
+              return retry;
+            }
+          } catch {
+            /* sigue sin ir: se avisa abajo */
+          }
+        }
+        if (err instanceof RequestError && err.status === 404) {
+          setOffline(true);
+          throw err;
+        }
         const message = err instanceof Error ? err.message : "Error inesperado";
         setError(message);
         throw err;

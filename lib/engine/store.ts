@@ -1,4 +1,5 @@
 import { getSession, newId } from "@/lib/store";
+import { readSnapshot, scheduleSnapshot } from "@/lib/persist";
 import type { Room } from "./types";
 
 /**
@@ -10,7 +11,19 @@ const globalStore = globalThis as unknown as {
 };
 
 const ROOMS: Map<string, Room> =
-  globalStore.__coupleRooms ?? (globalStore.__coupleRooms = new Map());
+  globalStore.__coupleRooms ?? (globalStore.__coupleRooms = hydrate());
+
+function hydrate(): Map<string, Room> {
+  const map = new Map<string, Room>();
+  for (const room of readSnapshot<Room>("rooms")) {
+    if (room?.code) map.set(room.code, room);
+  }
+  return map;
+}
+
+function persist(): void {
+  scheduleSnapshot("rooms", () => [...ROOMS.values()]);
+}
 
 const MAX_IDLE_MS = 6 * 60 * 60 * 1000;
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -32,19 +45,26 @@ export function getRoom(code: string): Room | undefined {
 
 export function putRoom(room: Room): void {
   ROOMS.set(room.code, room);
+  persist();
 }
 
 export function saveRoom(room: Room): void {
   room.lastActivity = Date.now();
   room.version += 1;
   ROOMS.set(room.code, room);
+  persist();
 }
 
 export function sweepRooms(): void {
   const now = Date.now();
+  let removed = false;
   for (const [code, room] of ROOMS) {
-    if (now - room.lastActivity > MAX_IDLE_MS) ROOMS.delete(code);
+    if (now - room.lastActivity > MAX_IDLE_MS) {
+      ROOMS.delete(code);
+      removed = true;
+    }
   }
+  if (removed) persist();
 }
 
 export { newId };

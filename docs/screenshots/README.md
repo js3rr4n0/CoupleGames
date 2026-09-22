@@ -29,3 +29,5 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `30-lobby-ilimitado.png` | Lobby con el tiempo puesto en ∞ |
 | `31-preguntas-adivinador.png` | Quien adivina escribe sus preguntas |
 | `32-preguntas-grupo-movil.png` | El grupo ve la pregunta y contesta |
+| `33-reconectando.png` | Aviso de reconexión con el servidor caído |
+| `34-recuperada.png` | La misma sala tras reiniciar el servidor |
