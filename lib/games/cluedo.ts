@@ -67,6 +67,9 @@ export interface CluedoState {
     weapon: string;
     room: string;
     refutedBy: string | null;
+    /** Quiénes dijeron «yo no tengo ninguna»: eso lo ve toda la mesa. */
+    passed: string[];
+    at: number;
   }[];
   /** Cartas que le han enseñado a cada quien: privadísimo. */
   reveals: Record<string, { from: string; card: string; at: number }[]>;
@@ -122,6 +125,8 @@ function askNext(state: CluedoState, ctx: GameContext): void {
         weapon: suggestion.weapon,
         room: suggestion.room,
         refutedBy: candidate,
+        passed: suggestion.asked.filter((id) => id !== candidate),
+        at: Date.now(),
       });
       state.suggestion = null;
       advanceTurn(state);
@@ -140,6 +145,8 @@ function askNext(state: CluedoState, ctx: GameContext): void {
     weapon: suggestion.weapon,
     room: suggestion.room,
     refutedBy: null,
+    passed: [...suggestion.asked],
+    at: Date.now(),
   });
   state.suggestion = null;
   advanceTurn(state);
@@ -190,7 +197,9 @@ export const cluedo: GameDefinition<CluedoState> = {
     {
       title: "Tu libreta",
       items: [
-        "La cuadrícula de la derecha es tuya y nadie más la ve: marca ✓ lo confirmado, ✗ lo descartado y ? lo dudoso.",
+        "La cuadrícula de abajo es tuya y nadie más la ve: marca ✓ lo confirmado, ✗ lo descartado y ? lo dudoso.",
+        "Lo que ya se sabe seguro se marca solo y sale con candado: tus cartas, las que te enseñan y quien no pudo refutar.",
+        "Arriba, el sobre va contando cuántas cartas quedan por tipo. Cuando solo queda una, esa es.",
       ],
     },
   ],
@@ -266,6 +275,8 @@ export const cluedo: GameDefinition<CluedoState> = {
         weapon: suggestion.weapon,
         room: suggestion.room,
         refutedBy: me,
+        passed: suggestion.asked.filter((id) => id !== me),
+        at: Date.now(),
       });
       next.suggestion = null;
       advanceTurn(next);
@@ -391,6 +402,8 @@ export const cluedo: GameDefinition<CluedoState> = {
             weapon: suggestion.weapon,
             room: suggestion.room,
             askingId: suggestion.askingId,
+            // A quién se le ha preguntado ya: público, como en la mesa de verdad.
+            asked: suggestion.asked,
             // Si te toca refutar, aquí van solo TUS cartas que encajan.
             options:
               playerId && suggestion.askingId === playerId

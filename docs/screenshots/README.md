@@ -33,3 +33,20 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `34-recuperada.png` | La misma sala tras reiniciar el servidor |
 | `35-cambiar-carta.png` | El grupo puede cambiar la carta |
 | `36-elegir-carta.png` | Eligiendo entre tres candidatos |
+| `37-adivinador-tras-cambio.png` | Quien adivina solo ve que le cambiaron la carta |
+| `40-cluedo-tutorial.png` | Cluedo: el tutorial que se abre la primera vez |
+| `41-cluedo-mover.png` | Cluedo: el dado y las habitaciones a tu alcance |
+| `42-cluedo-sospechar.png` | Cluedo: el paso 3, elegir sospechoso y arma |
+| `43-cluedo-interrogatorio.png` | Cluedo: sospechas de la mesa y libreta automarcada |
+| `44-cluedo-libreta.png` | Cluedo: la cuadrícula con marcas propias y seguras |
+| `45-uno-mesa.png` | UNO: la mesa redonda con cada quien en su sitio |
+| `46-uno-jugando.png` | UNO: el montón desordenado y la mano en abanico |
+| `47-uno-completo.png` | UNO: la pantalla entera |
+| `48-monopolio-inicio.png` | Monopolio: el tablero grande recién repartido |
+| `49-monopolio-dados.png` | Monopolio: los dados con sus puntos |
+| `50-monopolio-comprar.png` | Monopolio: la decisión de comprar, bien grande |
+| `51-monopolio-tablero.png` | Monopolio: fichas de colores y propiedades con dueño |
+| `52-monopolio-completo.png` | Monopolio: tablero, cartera, propiedades y mesa |
+| `53-uno-movil.png` | UNO en móvil: la mesa se encoge entera |
+| `54-monopolio-movil.png` | Monopolio en móvil: el tablero se desliza |
+| `55-cluedo-movil.png` | Cluedo en móvil |

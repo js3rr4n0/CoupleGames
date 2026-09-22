@@ -111,6 +111,13 @@ export const uno: GameDefinition<UnoState> = {
   minutes: "10-20 min",
   rules: [
     {
+      title: "La mesa",
+      items: [
+        "Cada quien se sienta abajo del todo y ve la mesa desde su sitio: del resto solo se ven los dorsos.",
+        "En el centro están el mazo y el montón; el aro de la mesa lleva el color que toca y la flecha señala a quién le toca.",
+      ],
+    },
+    {
       title: "Cómo se juega",
       items: [
         "Cada quien empieza con 7 cartas y solo ve las suyas.",
@@ -269,6 +276,9 @@ export const uno: GameDefinition<UnoState> = {
       top,
       drawCount: state.draw.length,
       discardCount: state.discard.length,
+      // Las últimas cartas del montón: las vio jugar toda la mesa, así que se
+      // pueden dibujar apiladas de cualquier manera, como en una mesa de verdad.
+      pile: state.discard.slice(-6),
       lastPlay: state.lastPlay,
       winnerId: state.winnerId,
       pendingCardId:

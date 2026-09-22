@@ -33,6 +33,15 @@
   --animate-roll: roll 0.6s ease-out;
   --animate-splash: splash 0.6s ease-out forwards;
   --animate-sway: sway 3s ease-in-out infinite;
+  --animate-tumble: tumble 0.75s cubic-bezier(0.3, 0.8, 0.3, 1) both;
+  --animate-hop: hop 0.3s ease-in-out;
+  --animate-toss: toss 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  --animate-deal: deal 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+  --animate-cash: cash 1.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  --animate-slam: slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  --animate-pulse-ring: pulse-ring 1.6s ease-out infinite;
+  --animate-glow: glow 1.2s ease-in-out infinite;
+  --animate-nod: nod 1.8s ease-in-out infinite;
 }
 
 @keyframes pop {
@@ -102,6 +111,55 @@
   0%, 100% { transform: rotate(-8deg); }
   50% { transform: rotate(8deg); }
 }
+/* Los dados dan tumbos de verdad antes de pararse en su número. */
+@keyframes tumble {
+  0%   { transform: translateY(-60%) rotate(-140deg) scale(0.75); }
+  35%  { transform: translateY(10%) rotate(80deg) scale(1.12); }
+  55%  { transform: translateY(-14%) rotate(200deg) scale(0.95); }
+  75%  { transform: translateY(4%) rotate(320deg) scale(1.06); }
+  100% { transform: none; }
+}
+/* La ficha salta de casilla en casilla en vez de teletransportarse. */
+@keyframes hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-9px) scale(1.18); }
+}
+/* Una carta lanzada al montón: llega girada y desde fuera. */
+@keyframes toss {
+  0% { transform: translate(var(--from-x, 0), var(--from-y, 60vh)) rotate(var(--from-r, -30deg)) scale(1.2); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(0, 0) rotate(var(--to-r, 0deg)) scale(1); opacity: 1; }
+}
+/* Reparto: las cartas salen del mazo una detrás de otra. */
+@keyframes deal {
+  0% { transform: translate(var(--deal-x, 0), var(--deal-y, -120px)) rotate(18deg) scale(0.7); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+/* Los billetes que se van (o que llegan) flotando. */
+@keyframes cash {
+  0% { transform: translateY(0) scale(0.7); opacity: 0; }
+  15% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-88px) scale(1); opacity: 0; }
+}
+/* Una carta de Suerte que aterriza de golpe en mitad de la pantalla. */
+@keyframes slam {
+  0% { transform: scale(2.4) rotate(-14deg); opacity: 0; }
+  55% { transform: scale(0.94) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(255, 200, 61, 0.9); }
+  70% { box-shadow: 0 0 0 14px rgba(255, 200, 61, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 200, 61, 0); }
+}
+@keyframes glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}
+@keyframes nod {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
 @keyframes confetti {
   0% { transform: translateY(-8vh) rotate(0deg); }
   100% { transform: translateY(108vh) rotate(540deg); }
@@ -136,6 +194,12 @@
   border: 3px solid var(--color-ink);
   border-radius: 1.25rem;
   box-shadow: var(--shadow-hard);
+}
+
+/* El tapete de la mesa: verde plano con su trama, nada de cristalitos. */
+@utility felt {
+  background-color: #1d7a52;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='3' cy='3' r='1.5' fill='%23ffffff' fill-opacity='0.12'/%3E%3C/svg%3E");
 }
 
 @utility sheet-flat {
@@ -187,6 +251,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-tumble,
+  .animate-hop,
+  .animate-toss,
+  .animate-deal,
+  .animate-slam,
+  .animate-pulse-ring,
+  .animate-glow,
+  .animate-nod,
   .flower-stroke,
   .flower-sway,
   .flower-in,

@@ -1,26 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { RoomView } from "@/lib/engine/view";
+import { play as sfx, useSfxOn } from "@/lib/sfx";
 import { Button, Card } from "../ui";
-
-type Color = "rojo" | "amarillo" | "verde" | "azul";
-
-interface UnoCard {
-  id: string;
-  color: Color | null;
-  kind: "numero" | "salta" | "cambio" | "mas2" | "comodin" | "mas4";
-  value: number | null;
-}
+import {
+  COLORS,
+  COLOR_HEX,
+  CardBack,
+  CardFace,
+  jitter,
+  type UnoCard,
+  type UnoColor,
+} from "./uno/cards";
 
 interface UnoView {
   order: string[];
   turn: string;
   direction: 1 | -1;
-  color: Color;
+  color: UnoColor;
   top: UnoCard;
+  pile: UnoCard[];
   drawCount: number;
-  lastPlay: { by: string; card: UnoCard; color: Color } | null;
+  discardCount: number;
+  lastPlay: { by: string; card: UnoCard; color: UnoColor } | null;
   winnerId: string | null;
   pendingCardId: string | null;
   hand: UnoCard[];
@@ -29,58 +32,11 @@ interface UnoView {
   counts: Record<string, number>;
 }
 
-const COLOR_BG: Record<Color, string> = {
-  rojo: "bg-tomato text-white",
-  amarillo: "bg-sun text-ink",
-  verde: "bg-grass text-white",
-  azul: "bg-sky text-white",
-};
+/** Radio de la mesa, en % del lado del tapete. */
+const SEAT_RADIUS = 33;
 
-const COLOR_DOT: Record<Color, string> = {
-  rojo: "bg-tomato",
-  amarillo: "bg-sun",
-  verde: "bg-grass",
-  azul: "bg-sky",
-};
-
-const COLORS: Color[] = ["rojo", "amarillo", "verde", "azul"];
-
-function label(card: UnoCard): string {
-  if (card.kind === "numero") return String(card.value);
-  if (card.kind === "salta") return "⃠";
-  if (card.kind === "cambio") return "⇄";
-  if (card.kind === "mas2") return "+2";
-  if (card.kind === "mas4") return "+4";
-  return "★";
-}
-
-function CardFace({
-  card,
-  size = "md",
-  className = "",
-}: {
-  card: UnoCard;
-  size?: "sm" | "md" | "lg";
-  className?: string;
-}) {
-  const sizes = {
-    sm: "h-16 w-11 text-lg",
-    md: "h-24 w-16 text-2xl",
-    lg: "h-32 w-22 text-4xl",
-  };
-  const wild = card.color === null;
-  return (
-    <span
-      className={`grid shrink-0 place-items-center rounded-xl border-[3px] border-ink font-display ${
-        sizes[size]
-      } ${wild ? "bg-ink text-white" : COLOR_BG[card.color as Color]} ${className}`}
-    >
-      <span className="grid h-3/5 w-3/4 place-items-center rounded-lg border-2 border-ink/20 bg-white/25">
-        {label(card)}
-      </span>
-    </span>
-  );
-}
+/** Ancho de las cartas del centro, medido contra el propio tapete. */
+const CARD = "11cqw";
 
 export default function UnoBoard({
   view,
@@ -95,18 +51,51 @@ export default function UnoBoard({
   const [wild, setWild] = useState<string | null>(null);
 
   const playable = new Set(state.playable);
-  const canOnlyPlayPending = Boolean(state.pendingCardId);
+  const mustUsePending = Boolean(state.pendingCardId);
+
+  /** Cada quien se sienta abajo del todo y ve la mesa desde su sitio. */
+  const seats = useMemo(() => {
+    const ids = state.order;
+    const start = me ? Math.max(0, ids.indexOf(me)) : 0;
+    const around = [...ids.slice(start), ...ids.slice(0, start)];
+    return around.map((id, index) => {
+      const angle = 90 + (index * 360) / around.length;
+      const rad = (angle * Math.PI) / 180;
+      return {
+        id,
+        angle,
+        x: 50 + SEAT_RADIUS * Math.cos(rad),
+        y: 50 + SEAT_RADIUS * Math.sin(rad),
+        /** Giro para que sus cartas apunten hacia fuera, como si las sostuviera. */
+        tilt: angle - 90,
+      };
+    });
+  }, [state.order, me]);
+
+  const seatOf = (id: string) => seats.find((seat) => seat.id === id);
+  const turnSeat = seatOf(state.turn);
+  const gritones = state.rivals.filter((rival) => rival.cards === 1).length;
+
+  useSfxOn(state.top.id, "carta");
+  useSfxOn(gritones, gritones > 0 ? "uno" : null);
+  useSfxOn(myTurn ? "si" : "no", myTurn ? "turno" : null);
+  useSfxOn(state.winnerId, state.winnerId ? "victoria" : null);
 
   function attempt(card: UnoCard) {
     if (!myTurn) return;
-    if (canOnlyPlayPending && card.id !== state.pendingCardId) return;
+    if (mustUsePending && card.id !== state.pendingCardId) return;
     if (!playable.has(card.id)) return;
     if (card.kind === "comodin" || card.kind === "mas4") {
+      sfx("toc");
       setWild(card.id);
       return;
     }
+    sfx("carta");
     play({ type: "jugar", cardId: card.id });
   }
+
+  const nameOf = (id: string) => view.players.find((p) => p.id === id)?.name ?? "?";
+  const emojiOf = (id: string) => view.players.find((p) => p.id === id)?.emoji ?? "🙂";
 
   return (
     <div className="space-y-4">
@@ -114,79 +103,209 @@ export default function UnoBoard({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-ink bg-bubblegum px-5 py-3">
           <p className="font-display text-xl">
             {state.winnerId
-              ? `¡Gana ${view.players.find((p) => p.id === state.winnerId)?.name}!`
+              ? `🏆 ¡Gana ${nameOf(state.winnerId)}!`
               : myTurn
-                ? canOnlyPlayPending
+                ? mustUsePending
                   ? "Robaste: juega esa carta o pasa"
-                  : "Te toca jugar"
-                : `Turno de ${view.players.find((p) => p.id === state.turn)?.name ?? "…"}`}
+                  : "Te toca a ti"
+                : `Turno de ${nameOf(state.turn)}`}
           </p>
           <div className="flex items-center gap-2 text-sm font-extrabold">
-            <span className="rounded-lg border-2 border-ink bg-white px-2 py-1">
-              {state.direction === 1 ? "↻ sentido normal" : "↺ sentido invertido"}
-            </span>
             <span className="flex items-center gap-1.5 rounded-lg border-2 border-ink bg-white px-2 py-1">
-              color <span className={`h-3 w-3 rounded-full border border-ink ${COLOR_DOT[state.color]}`} />
+              color
+              <span
+                className="h-3.5 w-3.5 rounded-full border-2 border-ink"
+                style={{ background: COLOR_HEX[state.color] }}
+              />
               {state.color}
+            </span>
+            <span className="rounded-lg border-2 border-ink bg-white px-2 py-1">
+              {state.direction === 1 ? "↻ hacia la izquierda" : "↺ al revés"}
             </span>
           </div>
         </div>
 
-        <div className="grid gap-4 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
-          <div className="flex items-end gap-4">
-            <div className="text-center">
-              <div className="grid h-24 w-16 place-items-center rounded-xl border-[3px] border-ink bg-ink font-display text-2xl text-white">
-                UNO
-              </div>
-              <p className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-ink-soft">
-                {state.drawCount} cartas
-              </p>
-            </div>
-            <div className="text-center">
-              <CardFace
-                card={state.top}
-                size="lg"
-                className={state.lastPlay ? "animate-flip" : ""}
-              />
-              <p className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-ink-soft">
-                montón
-              </p>
-            </div>
-          </div>
+        {/* ------------------------------ EL TAPETE ------------------------------ */}
+        <div className="p-3 sm:p-5">
+          <div
+            className="relative mx-auto aspect-square w-full max-w-[min(44rem,72vh)]"
+            // Todo lo que va encima del tapete se mide en cqw (porcentaje del
+            // tapete), así que la mesa se encoge entera y nada se sale.
+            style={{ containerType: "size" }}
+          >
+            <div className="felt absolute inset-0 rounded-full border-[6px] border-ink shadow-hard-lg" />
+            {/* El aro interior lleva el color que toca: se ve desde cualquier sitio. */}
+            <div
+              className="absolute inset-[5%] rounded-full border-[10px] transition-colors duration-300"
+              style={{ borderColor: COLOR_HEX[state.color] }}
+            />
 
-          <div className="flex flex-wrap gap-2">
-            {state.rivals.map((rival) => (
+            {/* La aguja que señala a quién le toca y gira hasta el siguiente. */}
+            {turnSeat && !state.winnerId && (
               <div
-                key={rival.id}
-                className={`rounded-xl border-[3px] border-ink px-3 py-2 ${
-                  state.turn === rival.id ? "bg-sun shadow-hard-sm" : "bg-paper"
-                }`}
+                className="absolute left-1/2 top-1/2 h-0 w-0 transition-transform duration-500"
+                style={{ transform: `rotate(${turnSeat.angle - 90}deg)` }}
               >
-                <p className="font-extrabold">
-                  {view.players.find((p) => p.id === rival.id)?.emoji} {rival.name}
-                </p>
-                <div className="mt-1 flex items-center gap-1">
-                  {Array.from({ length: Math.min(rival.cards, 8) }).map((_, i) => (
-                    <span
-                      key={i}
-                      className="h-6 w-4 rounded border-2 border-ink bg-ink"
-                    />
-                  ))}
-                  <span className="ml-1 text-xs font-extrabold">{rival.cards}</span>
-                  {rival.cards === 1 && (
-                    <span className="ml-1 rounded border-2 border-ink bg-tomato px-1 text-[10px] font-extrabold text-white">
-                      ¡UNO!
-                    </span>
-                  )}
-                </div>
+                <span
+                  className="absolute block"
+                  style={{ left: "-0.5em", fontSize: "5cqw", transform: "translateY(4.6em)" }}
+                >
+                  🔻
+                </span>
               </div>
-            ))}
+            )}
+
+            {/* Montones: mazo a la izquierda, descarte a la derecha. */}
+            <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-5 sm:gap-8">
+              <button
+                onClick={() => {
+                  if (!myTurn || mustUsePending) return;
+                  sfx("roba");
+                  play({ type: "robar" });
+                }}
+                disabled={!myTurn || mustUsePending}
+                title={myTurn ? "Roba una carta" : "Solo puedes robar en tu turno"}
+                className={`relative block ${
+                  myTurn && !mustUsePending
+                    ? "press cursor-pointer hover:-translate-y-1"
+                    : "cursor-default"
+                }`}
+                style={{ width: CARD, height: `calc(${CARD} * 1.5)` }}
+              >
+                {[0, 1, 2, 3].map((layer) => (
+                  <CardBack
+                    key={layer}
+                    width={CARD}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      transform: `translate(${layer * 2}px, ${-layer * 2}px)`,
+                    }}
+                  />
+                ))}
+                <span className="absolute left-1/2 w-max -translate-x-1/2 rounded-lg border-2 border-ink bg-white px-[0.5em] py-[0.15em] text-center font-extrabold"
+                  style={{ bottom: "-2.2em", fontSize: "2.6cqw" }}
+                >
+                  mazo · {state.drawCount}
+                </span>
+              </button>
+
+              <div className="relative" style={{ width: CARD, height: `calc(${CARD} * 1.5)` }}>
+                {/* Las cartas ya jugadas quedan tiradas de cualquier manera. */}
+                {state.pile.slice(0, -1).map((card) => (
+                  <CardFace
+                    key={card.id}
+                    card={card}
+                    width={CARD}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      transform: `translate(${jitter(`x${card.id}`, 10)}px, ${jitter(
+                        `y${card.id}`,
+                        10,
+                      )}px) rotate(${jitter(`r${card.id}`, 24)}deg)`,
+                    }}
+                  />
+                ))}
+                <CardFace
+                  key={state.top.id}
+                  card={state.top}
+                  width={CARD}
+                  className="animate-toss shadow-hard-sm"
+                  style={
+                    {
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      "--from-x": tossFrom(state.lastPlay?.by, seatOf).x,
+                      "--from-y": tossFrom(state.lastPlay?.by, seatOf).y,
+                      "--from-r": "-40deg",
+                      "--to-r": `${jitter(`r${state.top.id}`, 12)}deg`,
+                    } as React.CSSProperties
+                  }
+                />
+                <span className="absolute left-1/2 w-max -translate-x-1/2 rounded-lg border-2 border-ink bg-white px-[0.5em] py-[0.15em] text-center font-extrabold"
+                  style={{ bottom: "-2.2em", fontSize: "2.6cqw" }}
+                >
+                  montón · {state.discardCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Cada jugador en su sitio, con sus cartas giradas hacia él. */}
+            {seats.map((seat) => {
+              const mine = seat.id === me;
+              const cards = state.counts[seat.id] ?? 0;
+              const active = state.turn === seat.id && !state.winnerId;
+              return (
+                <div
+                  key={seat.id}
+                  className="absolute -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
+                >
+                  <div
+                    className="flex flex-col items-center gap-1"
+                    style={{ transform: `rotate(${seat.tilt}deg)` }}
+                  >
+                    {!mine && (
+                      <div
+                        className="flex items-end justify-center"
+                        style={{ height: `calc(${CARD} * 0.85)` }}
+                      >
+                        {Array.from({ length: Math.min(cards, 7) }).map((_, index, list) => (
+                          <CardBack
+                            key={index}
+                            width={`calc(${CARD} * 0.5)`}
+                            style={{
+                              marginLeft: index === 0 ? 0 : `calc(${CARD} * -0.32)`,
+                              transform: `rotate(${(index - (list.length - 1) / 2) * 7}deg)`,
+                            }}
+                          />
+                        ))}
+                        {cards === 0 && (
+                          <span className="text-2xl" title="sin cartas">
+                            🎉
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        transform: `rotate(${-seat.tilt}deg)`,
+                        fontSize: "2.8cqw",
+                        padding: "0.35em 0.6em",
+                        gap: "0.45em",
+                      }}
+                      className={`flex items-center whitespace-nowrap rounded-xl border-[3px] border-ink font-extrabold shadow-hard-sm ${
+                        active ? "animate-pulse-ring bg-sun" : "bg-white"
+                      }`}
+                    >
+                      <span style={{ fontSize: "1.3em" }}>{emojiOf(seat.id)}</span>
+                      <span className="max-w-[4.5em] truncate">
+                        {mine ? "tú" : nameOf(seat.id)}
+                      </span>
+                      <span className="rounded-md border-2 border-ink bg-paper px-[0.35em]">
+                        {cards}
+                      </span>
+                      {cards === 1 && (
+                        <span className="animate-wiggle rounded-md border-2 border-ink bg-tomato px-[0.35em] text-white">
+                          ¡UNO!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </Card>
 
+      {/* ------------------------------ TU MANO ------------------------------ */}
       <Card className="overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b-[3px] border-ink bg-paper-2 px-4 py-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b-[3px] border-ink bg-paper-2 px-4 py-2.5">
           <h3 className="font-display text-lg">
             🔒 Tu mano ({state.hand.length}) · solo la ves tú
           </h3>
@@ -194,71 +313,87 @@ export default function UnoBoard({
             <Button
               variant="plain"
               className="px-3 py-1.5 text-sm"
-              disabled={!myTurn || canOnlyPlayPending}
-              onClick={() => play({ type: "robar" })}
+              disabled={!myTurn || mustUsePending}
+              onClick={() => {
+                sfx("roba");
+                play({ type: "robar" });
+              }}
             >
               🫴 Robar
             </Button>
             <Button
               variant="plain"
               className="px-3 py-1.5 text-sm"
-              disabled={!myTurn || !canOnlyPlayPending}
+              disabled={!myTurn || !mustUsePending}
               onClick={() => play({ type: "pasar" })}
             >
               ➡️ Pasar
             </Button>
           </div>
         </div>
-        <div className="scroll-soft flex gap-2 overflow-x-auto p-4">
-          {state.hand.map((card) => {
-            const usable =
-              myTurn &&
-              playable.has(card.id) &&
-              (!canOnlyPlayPending || card.id === state.pendingCardId);
-            return (
-              <button
-                key={card.id}
-                onClick={() => attempt(card)}
-                disabled={!usable}
-                className={`transition ${
-                  usable
-                    ? "press -translate-y-1 shadow-hard-sm hover:-translate-y-2"
-                    : "opacity-45"
-                }`}
-              >
-                <CardFace card={card} />
-              </button>
-            );
-          })}
-          {!state.hand.length && (
-            <p className="py-6 font-bold text-ink-soft">Sin cartas. 🎉</p>
-          )}
+        <div className="scroll-soft overflow-x-auto px-4 pb-6 pt-8">
+          <div className="mx-auto flex w-max items-end">
+            {state.hand.map((card, index, list) => {
+              const usable =
+                myTurn && playable.has(card.id) && (!mustUsePending || card.id === state.pendingCardId);
+              const middle = (list.length - 1) / 2;
+              const spread = Math.min(4, 40 / Math.max(list.length, 1));
+              const angle = (index - middle) * spread;
+              return (
+                <button
+                  key={card.id}
+                  onClick={() => attempt(card)}
+                  disabled={!usable}
+                  title={usable ? "Jugar esta carta" : "Esta no se puede jugar ahora"}
+                  className={`animate-deal -ml-5 origin-bottom transition-transform first:ml-0 ${
+                    usable ? "hover:-translate-y-4 hover:z-10" : "opacity-45"
+                  }`}
+                  style={{
+                    transform: `rotate(${angle}deg) translateY(${Math.abs(angle) * 0.9}px)`,
+                    zIndex: index,
+                  }}
+                >
+                  <CardFace
+                    card={card}
+                    width="5rem"
+                    className={usable ? "shadow-hard-sm" : ""}
+                  />
+                </button>
+              );
+            })}
+            {!state.hand.length && (
+              <p className="py-6 font-bold text-ink-soft">Sin cartas. 🎉</p>
+            )}
+          </div>
         </div>
+        {myTurn && !mustUsePending && !state.playable.length && (
+          <p className="border-t-2 border-ink/15 bg-sun px-4 py-2 text-sm font-bold">
+            No tienes nada jugable: toca el mazo del centro para robar.
+          </p>
+        )}
       </Card>
 
       {wild && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4">
-          <Card className="animate-pop w-full max-w-sm p-6 text-center">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4">
+          <Card className="animate-slam w-full max-w-sm p-6 text-center">
             <h3 className="font-display text-2xl">¿De qué color sigue?</h3>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {COLORS.map((color) => (
                 <button
                   key={color}
                   onClick={() => {
+                    sfx("carta");
                     play({ type: "jugar", cardId: wild, color });
                     setWild(null);
                   }}
-                  className={`press rounded-xl border-[3px] border-ink py-6 font-display text-lg shadow-hard ${COLOR_BG[color]}`}
+                  className="press rounded-xl border-[3px] border-ink py-8 font-display text-lg text-white shadow-hard"
+                  style={{ background: COLOR_HEX[color] }}
                 >
                   {color}
                 </button>
               ))}
             </div>
-            <Button
-              variant="quiet"
-              className="mt-4 w-full"
-              onClick={() => setWild(null)}
-            >
+            <Button variant="quiet" className="mt-4 w-full" onClick={() => setWild(null)}>
               Mejor otra carta
             </Button>
           </Card>
@@ -266,4 +401,18 @@ export default function UnoBoard({
       )}
     </div>
   );
+}
+
+/** Desde dónde vuela la carta hasta el montón: desde el sitio de quien la jugó. */
+function tossFrom(
+  playerId: string | undefined,
+  seatOf: (id: string) => { angle: number } | undefined,
+): { x: string; y: string } {
+  const seat = playerId ? seatOf(playerId) : undefined;
+  if (!seat) return { x: "0rem", y: "6rem" };
+  const rad = (seat.angle * Math.PI) / 180;
+  return {
+    x: `${(Math.cos(rad) * 11).toFixed(2)}rem`,
+    y: `${(Math.sin(rad) * 11).toFixed(2)}rem`,
+  };
 }

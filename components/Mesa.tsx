@@ -10,6 +10,7 @@ import UnoBoard from "./games/UnoBoard";
 import CluedoBoard from "./games/CluedoBoard";
 import MonopolioBoard from "./games/MonopolioBoard";
 import Notepad from "./Notepad";
+import SoundToggle from "./SoundToggle";
 import RulesButton, { RulesList } from "./RulesPanel";
 import {
   Avatar,
@@ -97,6 +98,7 @@ export default function Mesa({ code }: { code: string }) {
           ))}
         </div>
         <RulesButton name={view.gameName} emoji={view.gameEmoji} rules={view.rules} />
+        <SoundToggle />
         <Button variant="plain" className="px-3 py-2 text-sm" onClick={share}>
           {copied ? "¡Copiado!" : "Invitar"}
         </Button>
@@ -292,7 +294,8 @@ export default function Mesa({ code }: { code: string }) {
             )}
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_19rem]">
-              <div>
+              {/* min-w-0: sin esto, un tablero ancho estira la página entera. */}
+              <div className="min-w-0">
                 <Board view={view} play={play} send={send} />
               </div>
               <div className="space-y-4">

@@ -39,13 +39,27 @@ export interface MonoState {
   stage: "tirar" | "comprar" | "gestion" | "deuda" | "fin";
   dice: [number, number] | null;
   doubles: number;
-  lastCard: { deck: "suerte" | "caja"; text: string } | null;
+  lastCard: { deck: "suerte" | "caja"; text: string; who: string; at: number } | null;
   debt: { from: string; to: string | null; amount: number } | null;
   trade: Trade | null;
   decks: { suerte: string[]; caja: string[] };
   out: string[];
   winnerId: string | null;
   moved: { by: string; from: number; to: number; at: number } | null;
+  /** Cuándo se tiraron los dados, para que la animación vuelva a saltar. */
+  diceAt: number | null;
+  /** Los últimos movimientos de dinero: la mesa entera los ve y se animan. */
+  flows: MoneyFlow[];
+}
+
+/** Un billete que cambia de manos. `from`/`to` en null significa «la banca». */
+export interface MoneyFlow {
+  id: string;
+  from: string | null;
+  to: string | null;
+  amount: number;
+  reason: string;
+  at: number;
 }
 
 const CARD_BY_ID = new Map<string, ChanceCard>(
@@ -95,17 +109,36 @@ function rentFor(state: MonoState, index: number, diceSum: number): number {
   return doubled ? rents[0] * 2 : rents[0];
 }
 
+let flowSeq = 0;
+
+/** Apunta un movimiento de dinero para poder enseñarlo y que suene. */
+function moneyFlow(
+  state: MonoState,
+  from: string | null,
+  to: string | null,
+  amount: number,
+  reason: string,
+): void {
+  if (amount <= 0) return;
+  state.flows = [
+    ...(state.flows ?? []).slice(-5),
+    { id: `f${Date.now().toString(36)}${flowSeq++}`, from, to, amount, reason, at: Date.now() },
+  ];
+}
+
 function pay(
   state: MonoState,
   ctx: GameContext,
   from: string,
   to: string | null,
   amount: number,
+  reason = "pago",
 ): void {
   if (amount <= 0) return;
   if (state.cash[from] >= amount) {
     state.cash[from] -= amount;
     if (to) state.cash[to] += amount;
+    moneyFlow(state, from, to, amount, reason);
     return;
   }
   // No llega con lo que tiene en mano: queda a deber hasta que venda o hipoteque.
@@ -139,12 +172,15 @@ function applyCard(
   card: ChanceCard,
   deck: "suerte" | "caja",
 ): void {
-  state.lastCard = { deck, text: card.text };
+  state.lastCard = { deck, text: card.text, who: playerId, at: Date.now() };
   ctx.log(`${nameOf(ctx.players, playerId)}: ${card.text}`, deck === "suerte" ? "🍀" : "📦");
   const effect = card.effect;
 
-  if (effect.type === "cobrar") state.cash[playerId] += effect.amount;
-  else if (effect.type === "pagar") pay(state, ctx, playerId, null, effect.amount);
+  if (effect.type === "cobrar") {
+    state.cash[playerId] += effect.amount;
+    moneyFlow(state, null, playerId, effect.amount, card.text);
+  }
+  else if (effect.type === "pagar") pay(state, ctx, playerId, null, effect.amount, card.text);
   else if (effect.type === "carcel") sendToJail(state, ctx, playerId);
   else if (effect.type === "salir-carcel") state.jailCards[playerId] += 1;
   else if (effect.type === "cobrar-cada") {
@@ -173,6 +209,7 @@ function applyCard(
         : (((from + effect.steps) % 40) + 40) % 40;
     if (effect.type === "mover" && to <= from && to !== JAIL) {
       state.cash[playerId] += 200;
+      moneyFlow(state, null, playerId, 200, "sueldo al pasar por la Salida");
       ctx.log(`${nameOf(ctx.players, playerId)} pasa por la Salida y cobra 200`, "💰");
     }
     state.positions[playerId] = to;
@@ -198,7 +235,7 @@ function resolveLanding(
   }
   if (space.kind === "impuesto") {
     ctx.log(`${who} paga ${space.tax}€ de ${space.name.toLowerCase()}`, "🧾");
-    pay(state, ctx, playerId, null, space.tax ?? 0);
+    pay(state, ctx, playerId, null, space.tax ?? 0, `${space.name}`);
     if (state.stage !== "deuda") state.stage = "gestion";
     return;
   }
@@ -217,7 +254,7 @@ function resolveLanding(
     if (prop.owner !== playerId && !prop.mortgaged) {
       const rent = rentFor(state, index, diceSum);
       ctx.log(`${who} paga ${rent}€ a ${nameOf(ctx.players, prop.owner)} por ${space.name}`, "💸");
-      pay(state, ctx, playerId, prop.owner, rent);
+      pay(state, ctx, playerId, prop.owner, rent, `alquiler de ${space.name}`);
     }
   }
   if (state.stage !== "deuda") state.stage = "gestion";
@@ -278,6 +315,14 @@ export const monopolio: GameDefinition<MonoState> = {
   max: 6,
   minutes: "40-60 min",
   rules: [
+    {
+      title: "El tablero",
+      items: [
+        "Toca cualquier casilla para ver su precio, sus alquileres y quién la tiene.",
+        "Cada jugador lleva un color: es el de su ficha y el del marco de sus propiedades.",
+        "En el centro se ven los dados, las cartas de Suerte y cada movimiento de dinero.",
+      ],
+    },
     {
       title: "Tu turno",
       items: [
@@ -345,6 +390,8 @@ export const monopolio: GameDefinition<MonoState> = {
       out: [],
       winnerId: null,
       moved: null,
+      diceAt: null,
+      flows: [],
     };
   },
 
@@ -406,6 +453,8 @@ export const monopolio: GameDefinition<MonoState> = {
       const a = roll();
       const b = roll();
       next.dice = [a, b];
+      next.diceAt = Date.now();
+      next.lastCard = null;
       const isDouble = a === b;
       const sum = a + b;
 
@@ -438,6 +487,7 @@ export const monopolio: GameDefinition<MonoState> = {
       const to = (from + sum) % 40;
       if (to < from) {
         next.cash[me] += 200;
+        moneyFlow(next, null, me, 200, "sueldo al pasar por la Salida");
         ctx.log(`${myName} pasa por la Salida y cobra 200`, "💰");
       }
       next.positions[me] = to;
@@ -454,6 +504,7 @@ export const monopolio: GameDefinition<MonoState> = {
       const price = space.price ?? 0;
       if (next.cash[me] < price) throw new GameError("No te llega el dinero.");
       next.cash[me] -= price;
+      moneyFlow(next, me, null, price, `compra de ${space.name}`);
       next.props[index].owner = me;
       ctx.log(`${myName} compra ${space.name} por ${price}€`, "🏠");
       next.stage = "gestion";
@@ -532,6 +583,7 @@ export const monopolio: GameDefinition<MonoState> = {
       } else {
         if (next.cash[me] < BAIL) throw new GameError("No tienes los 50€ de la fianza.");
         next.cash[me] -= BAIL;
+        moneyFlow(next, me, null, BAIL, "fianza de la cárcel");
         ctx.log(`${myName} paga la fianza`, "💵");
       }
       next.jail[me] = -1;
@@ -545,6 +597,7 @@ export const monopolio: GameDefinition<MonoState> = {
         throw new GameError("Todavía no te llega: hipoteca o vende algo.");
       next.cash[me] -= debt.amount;
       if (debt.to) next.cash[debt.to] += debt.amount;
+      moneyFlow(next, me, debt.to, debt.amount, "deuda saldada");
       next.debt = null;
       next.stage = "gestion";
       ctx.log(`${myName} salda su deuda de ${debt.amount}€`, "✅");

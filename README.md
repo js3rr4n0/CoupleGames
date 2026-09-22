@@ -135,9 +135,27 @@ libreta privada, reglas dentro del juego y revancha sin salir de la sala.
 | --- | --- | --- |
 | 🔴 **Conecta 4** | 2 | Tablero de 7×6 con gravedad, ficha que cae animada, detección de línea en cualquier dirección y tablas si se llena. |
 | 🚢 **Batalla naval** | 2 | Cinco barcos que se colocan a mano o al azar, validación de solapes, disparos por turnos (acertar da otro tiro) y barcos que se revelan al hundirse. |
-| 🃏 **UNO** | 2-8 | Baraja completa de 108 cartas, salta, cambio de sentido, +2, comodines y +4, robo con opción de jugar la carta robada, remezcla del descarte y canto automático de ¡UNO! |
-| 🕵️ **Cluedo** | 3-6 | 21 cartas, solución oculta, mansión de nueve habitaciones con pasadizos secretos, dado, sugerencias, refutaciones privadas, acusación final y **cuadrícula de descartes** personal. |
-| 🏦 **Monopolio** | 2-6 | Las 40 casillas, alquileres con color completo, casas y hoteles parejos, hipotecas, cárcel con fianza y dobles, mazos de Suerte y Caja de comunidad, deudas, quiebras y tratos entre jugadores. |
+| 🃏 **UNO** | 2-8 | **Mesa redonda de verdad**: el mazo y el montón en el centro, cada quien sentado en su lado y viendo la mesa desde ahí, cartas que caen desordenadas, mano en abanico, baraja completa de 108 cartas y canto automático de ¡UNO! |
+| 🕵️ **Cluedo** | 3-6 | 21 cartas, solución oculta, mansión con pasadizos, **tutorial de 30 segundos**, una barra que dice en todo momento qué toca hacer y una **libreta que deduce contigo**. |
+| 🏦 **Monopolio** | 2-6 | Tablero grande y legible, **dados que ruedan**, **ficha que recorre casilla a casilla**, cartas de Suerte a pantalla, cada cobro y cada pago anunciados, alquileres, casas, hipotecas, cárcel, deudas, quiebras y tratos. |
+
+### La mesa se oye y se mueve
+
+Hay sonido de mesa —dados, cartas, monedas, la ficha saltando— y se puede
+silenciar con el 🔊 de la cabecera; la decisión se recuerda en cada aparato. No
+hay ni un archivo de audio: cada efecto se fabrica al vuelo con WebAudio
+(`lib/sfx.ts`), así que no se descarga nada. Las animaciones respetan
+`prefers-reduced-motion`.
+
+### La libreta del Cluedo piensa contigo
+
+La cuadrícula ya no es solo un bloc: marca sola, y con candado, todo lo que
+consta con certeza —tus cartas, las que te han enseñado y quién dijo en voz alta
+que no podía refutar— y encima va contando cuántas cartas quedan por tipo en el
+sobre. Cuando de un tipo solo queda una, te lo dice. Todo sale de lo que esa
+persona ha visto con sus propios ojos (`lib/games/cluedo-deduce.ts`): la solución
+no se mira nunca. Las marcas a mano se pintan al instante y viajan al servidor
+por detrás, así que no parpadean ni se pierden entre sondeos.
 
 ### Lo que cada quien ve
 
