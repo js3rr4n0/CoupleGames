@@ -26,11 +26,14 @@ buscador, y quien adivina nunca puede ver su propia carta.
    cualquier móvil y aparece en el lobby al instante.
 3. **Por turnos, alguien adivina**: su personaje se muestra en las pantallas del
    resto y en la suya solo aparecen los huecos del nombre.
-4. Quien adivina **escribe su pregunta** (o la dice en voz alta): aparece en la
+4. Si la carta no convence, **el grupo la cambia**: otra del mismo mazo, una de
+   otro mazo, o eligiendo entre tres candidatos con su foto. Quien adivina no ve
+   nada de eso, solo que el nombre oculto ha cambiado de largo.
+5. Quien adivina **escribe su pregunta** (o la dice en voz alta): aparece en la
    pantalla del resto, que responde con los botones **Sí / No / Quizá**, y cada
    respuesta queda pegada a su pregunta. Puede gastar hasta **6 pistas**
    (−15 puntos cada una) antes de arriesgar un nombre.
-5. Acertar rápido da más puntos; el resto del grupo también suma por ayudar.
+6. Acertar rápido da más puntos; el resto del grupo también suma por ayudar.
    Al terminar hay **podio, historial** y **revancha** con personajes nuevos.
 
 | Quien adivina (móvil) | El resto del grupo |
@@ -53,6 +56,8 @@ La sorpresa se protege en el **servidor**, no en la interfaz:
 - Las pistas se revelan de una en una y se **censura** cualquier aparición del
   nombre del personaje dentro del texto (`redact()` en `lib/text.ts`).
 - No hay buscador, listado ni autocompletado de personajes en ninguna pantalla.
+- Los candidatos que el grupo baraja al cambiar de carta se sirven solo a quien
+  no está adivinando; a quien adivina le llega una lista vacía.
 
 ### Fuentes de personajes (todas gratuitas y sin API key)
 

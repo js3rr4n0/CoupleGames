@@ -31,3 +31,5 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `32-preguntas-grupo-movil.png` | El grupo ve la pregunta y contesta |
 | `33-reconectando.png` | Aviso de reconexión con el servidor caído |
 | `34-recuperada.png` | La misma sala tras reiniciar el servidor |
+| `35-cambiar-carta.png` | El grupo puede cambiar la carta |
+| `36-elegir-carta.png` | Eligiendo entre tres candidatos |

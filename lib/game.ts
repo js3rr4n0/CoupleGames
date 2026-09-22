@@ -197,6 +197,115 @@ function drawCharacter(session: GameSession): Character | null {
   return next ?? null;
 }
 
+/** Saca del mazo un personaje de esa categoría, pidiendo más a la API si no queda. */
+async function drawFromCategory(
+  session: GameSession,
+  categoryId: CategoryId,
+): Promise<Character | null> {
+  const take = (): Character | null => {
+    const index = session.deck.findIndex((card) => card.category === categoryId);
+    if (index < 0) return null;
+    const [card] = session.deck.splice(index, 1);
+    session.used.push(card.id);
+    return card;
+  };
+
+  const ready = take();
+  if (ready) {
+    topUpIfNeeded(session);
+    return ready;
+  }
+
+  const { deck } = await buildDeck([categoryId], 5);
+  const fresh = deck.filter((card) => !session.used.includes(card.id));
+  session.deck.push(...fresh);
+  return take();
+}
+
+function requireHelper(session: GameSession, player: Player): Round {
+  const round = session.round;
+  if (!round || round.status !== "live")
+    throw new GameError("Ahora mismo no hay una ronda en juego.");
+  if (player.id === round.actorId)
+    throw new GameError("Quien adivina no puede tocar su propia carta.", 403);
+  return round;
+}
+
+/** Limpia la ronda al cambiar de personaje: lo preguntado ya no vale. */
+function resetRound(round: Round, session: GameSession, character: Character): void {
+  const now = Date.now();
+  round.character = character;
+  round.startedAt = now;
+  round.endsAt =
+    session.settings.roundSeconds === 0
+      ? Number.MAX_SAFE_INTEGER
+      : now + session.settings.roundSeconds * 1000;
+  round.hintsUsed = 0;
+  round.answers = [];
+  round.questions = [];
+  round.guesses = [];
+  round.options = [];
+  round.swaps += 1;
+}
+
+/** El grupo pide otra carta, del mismo mazo o de otro. */
+export async function swapCharacter(
+  session: GameSession,
+  player: Player,
+  categoryId?: CategoryId,
+): Promise<void> {
+  const round = requireHelper(session, player);
+  const wanted = categoryId ?? round.character.category;
+  const next = await drawFromCategory(session, wanted);
+  if (!next)
+    throw new GameError("No pudimos traer otro personaje de ahí. Prueba con otro mazo.");
+  resetRound(round, session, next);
+  saveSession(session);
+}
+
+/** Muestra al grupo tres candidatos para que elijan a mano. */
+export async function offerOptions(
+  session: GameSession,
+  player: Player,
+  categoryId?: CategoryId,
+): Promise<void> {
+  const round = requireHelper(session, player);
+  const wanted = categoryId ?? round.character.category;
+  const picked: Character[] = [];
+  for (let i = 0; i < 3; i++) {
+    const card = await drawFromCategory(session, wanted);
+    if (!card) break;
+    picked.push(card);
+  }
+  if (!picked.length)
+    throw new GameError("No pudimos traer personajes de ese mazo ahora mismo.");
+  // Los que no se elijan vuelven al mazo, que no se tiran.
+  round.options = picked;
+  saveSession(session);
+}
+
+export function chooseCharacter(
+  session: GameSession,
+  player: Player,
+  characterId: string,
+): void {
+  const round = requireHelper(session, player);
+  const chosen = round.options.find((card) => card.id === characterId);
+  if (!chosen) throw new GameError("Esa carta ya no está disponible.");
+  const rest = round.options.filter((card) => card.id !== characterId);
+  resetRound(round, session, chosen);
+  // Los descartados vuelven a la baraja para otras rondas.
+  session.deck.push(...rest);
+  saveSession(session);
+}
+
+export function clearOptions(session: GameSession, player: Player): void {
+  const round = requireHelper(session, player);
+  session.deck.push(...round.options);
+  round.options = [];
+  saveSession(session);
+}
+
 function startRound(session: GameSession): void {
   const character = drawCharacter(session);
   if (!character) {
@@ -220,6 +329,8 @@ function startRound(session: GameSession): void {
     questions: [],
     guesses: [],
     hintsUsed: 0,
+    swaps: 0,
+    options: [],
     status: "live",
     points: 0,
     helperPoints: 0,

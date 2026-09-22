@@ -77,6 +77,10 @@ export interface Round {
   questions: QuestionEntry[];
   guesses: GuessEntry[];
   hintsUsed: number;
+  /** Cuántas veces ha cambiado el grupo la carta en esta ronda. */
+  swaps: number;
+  /** Candidatos que el grupo está mirando para elegir (nunca los ve quien adivina). */
+  options: Character[];
   status: RoundStatus;
   points: number;
   helperPoints: number;

@@ -42,6 +42,16 @@ export interface CardView {
   revealedHints?: string[];
 }
 
+/** Candidato que el grupo puede elegir; quien adivina nunca lo recibe. */
+export interface OptionView {
+  id: string;
+  name: string;
+  image: string | null;
+  categoryLabel: string;
+  categoryEmoji: string;
+  hint: string;
+}
+
 export interface RoundView {
   index: number;
   actorId: string;
@@ -58,6 +68,9 @@ export interface RoundView {
   guesses: GuessEntry[];
   card: CardView;
   youGuess: boolean;
+  /** Veces que el grupo ha cambiado la carta en esta ronda. */
+  swaps: number;
+  options: OptionView[];
 }
 
 export interface SessionView {
@@ -141,6 +154,20 @@ export function buildView(session: GameSession, playerId: string | null): Sessio
       guesses: round.guesses.slice(0, 12),
       card,
       youGuess,
+      swaps: round.swaps,
+      options: youGuess
+        ? []
+        : round.options.map((option) => {
+            const meta = CATEGORY_BY_ID.get(option.category);
+            return {
+              id: option.id,
+              name: option.name,
+              image: option.image,
+              categoryLabel: meta?.label ?? option.category,
+              categoryEmoji: meta?.emoji ?? "🎲",
+              hint: option.hints[0] ?? "",
+            };
+          }),
     };
   }
 

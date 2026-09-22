@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import {
+  chooseCharacter,
+  clearOptions,
   GameError,
+  offerOptions,
+  swapCharacter,
   joinSession,
   nextRound,
   passRound,
@@ -25,6 +29,7 @@ interface ActionBody {
   value?: AnswerValue;
   text?: string;
   questionId?: string;
+  characterId?: string;
   categories?: CategoryId[];
   roundSeconds?: number;
   roundsPerPlayer?: number;
@@ -110,6 +115,18 @@ export async function POST(
         break;
       case "hint":
         revealHint(session, player);
+        break;
+      case "swap":
+        await swapCharacter(session, player, body.categories?.[0]);
+        break;
+      case "options":
+        await offerOptions(session, player, body.categories?.[0]);
+        break;
+      case "choose":
+        chooseCharacter(session, player, body.characterId ?? "");
+        break;
+      case "cancel-options":
+        clearOptions(session, player);
         break;
       case "pass":
         passRound(session, player);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { AnswerValue } from "@/lib/types";
+import type { AnswerValue, CategoryId } from "@/lib/types";
+import { CATEGORY_META } from "@/lib/categories";
 import type { SessionView } from "@/lib/view";
 import Poster from "./Poster";
 import { TimerBox, useCountdown } from "./Timer";
@@ -212,6 +213,12 @@ function GuesserPanel({
             <p className="mt-5 text-sm font-bold text-white/70">
               {card.letters} letras · nadie puede decirte el nombre
             </p>
+            {round.swaps > 0 && (
+              <p className="mt-1 text-sm font-bold text-sun">
+                🔄 El grupo te cambió la carta {round.swaps}{" "}
+                {round.swaps === 1 ? "vez" : "veces"}
+              </p>
+            )}
           </div>
 
           <form onSubmit={ask} className="mt-5 flex gap-2">
@@ -313,6 +320,103 @@ function GuesserPanel({
   );
 }
 
+function CardPicker({
+  view,
+  act,
+  busy,
+}: {
+  view: SessionView;
+  act: Act;
+  busy: boolean;
+}) {
+  const round = view.round!;
+  const [deck, setDeck] = useState<CategoryId>(round.card.categoryId);
+
+  if (round.options.length) {
+    return (
+      <div className="animate-pop border-t-[3px] border-ink bg-sun p-4">
+        <p className="font-display text-lg">Elegid la carta que le toca</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {round.options.map((option) => (
+            <button
+              key={option.id}
+              disabled={busy}
+              onClick={() => act("choose", { characterId: option.id })}
+              className="press overflow-hidden rounded-xl border-[3px] border-ink bg-white text-left shadow-hard-sm"
+            >
+              <Poster
+                src={option.image}
+                alt={option.name}
+                emoji={option.categoryEmoji}
+                className="h-24 w-full rounded-none border-0 border-b-[3px]"
+                emojiClassName="text-3xl"
+              />
+              <span className="block px-2 py-1.5">
+                <span className="block text-sm font-extrabold leading-tight">
+                  {option.name}
+                </span>
+                <span className="mt-0.5 block text-[11px] font-bold text-ink-soft">
+                  {option.hint}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+        <Button
+          variant="quiet"
+          className="mt-3 px-3 py-1.5 text-sm"
+          disabled={busy}
+          onClick={() => act("cancel-options")}
+        >
+          Dejarlo como está
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t-[3px] border-ink bg-paper-2 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
+          ¿No os convence la carta?
+        </span>
+        <select
+          value={deck}
+          onChange={(event) => setDeck(event.target.value as CategoryId)}
+          className="rounded-lg border-2 border-ink bg-white px-2 py-1.5 text-sm font-bold"
+        >
+          {CATEGORY_META.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.emoji} {category.label}
+            </option>
+          ))}
+        </select>
+        <Button
+          variant="plain"
+          className="px-3 py-1.5 text-sm"
+          disabled={busy}
+          onClick={() => act("swap", { categories: [deck] })}
+        >
+          🎲 Otra carta
+        </Button>
+        <Button
+          variant="plain"
+          className="px-3 py-1.5 text-sm"
+          disabled={busy}
+          onClick={() => act("options", { categories: [deck] })}
+        >
+          🗂️ Elegir entre tres
+        </Button>
+        {round.swaps > 0 && (
+          <span className="text-[11px] font-bold uppercase tracking-wide text-ink-soft">
+            cambiada {round.swaps} {round.swaps === 1 ? "vez" : "veces"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function HelperPanel({
   view,
   act,
@@ -371,6 +475,8 @@ function HelperPanel({
             </ul>
           </div>
         </div>
+
+        <CardPicker view={view} act={act} busy={busy} />
 
         <div className="border-t-[3px] border-ink bg-paper-2 p-5">
           <div

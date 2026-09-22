@@ -168,6 +168,14 @@ export default function Lobby({
               </span>
               Acertar rápido da más puntos y el resto también suma por ayudar.
             </li>
+            <li className="flex gap-2">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
+                5
+              </span>
+              ¿No os convence la carta? El grupo puede cambiarla por otra del
+              mismo mazo, de otro, o elegir entre tres. Quien adivina nunca las
+              ve.
+            </li>
           </ol>
         </Card>
       </div>
