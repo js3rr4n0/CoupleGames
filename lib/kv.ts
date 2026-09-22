@@ -7,9 +7,14 @@
  * comparte. Si no hay variables de entorno configuradas, no se usa y todo
  * sigue funcionando en memoria + disco, como en un servidor normal.
  */
-const URL_VAR = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+const URL_VAR =
+  process.env.KV_REST_API_URL ??
+  process.env.UPSTASH_REDIS_REST_URL ??
+  process.env.REDIS_REST_URL;
 const TOKEN_VAR =
-  process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  process.env.KV_REST_API_TOKEN ??
+  process.env.UPSTASH_REDIS_REST_TOKEN ??
+  process.env.REDIS_REST_TOKEN;
 
 /** Las salas caducan solas a las 6 horas, igual que en memoria. */
 const TTL_SECONDS = 6 * 60 * 60;
