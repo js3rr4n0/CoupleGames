@@ -26,3 +26,6 @@ públicas), escritorio 1440×950 y móvil 390×844.
 | `27-robots-lobby.png` | Lobby con un robot sentado a la mesa |
 | `28-robots-partida.png` | Partida contra el robot |
 | `29-robots-uno.png` | UNO contra dos robots |
+| `30-lobby-ilimitado.png` | Lobby con el tiempo puesto en ∞ |
+| `31-preguntas-adivinador.png` | Quien adivina escribe sus preguntas |
+| `32-preguntas-grupo-movil.png` | El grupo ve la pregunta y contesta |

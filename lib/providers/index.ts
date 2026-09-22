@@ -42,7 +42,7 @@ function sanitize(character: Character): Character | null {
   const hints = character.hints
     .map((h) => redact(h, name))
     .filter((h) => h.replace(/[•\s]/g, "").length > 6)
-    .slice(0, 5);
+    .slice(0, 6);
   if (hints.length < 2) return null;
   return { ...character, name, hints };
 }

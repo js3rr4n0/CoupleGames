@@ -27,7 +27,7 @@ const STEPS = [
     n: "3",
     tone: "bg-tomato text-white",
     title: "Adivina quién eres",
-    text: "Tu carta la ve todo el mundo menos tú.",
+    text: "Escribe tus preguntas; tu carta la ve todo el mundo menos tú.",
   },
 ];
 

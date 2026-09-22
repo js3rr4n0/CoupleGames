@@ -133,6 +133,15 @@ export function ErrorBar({
   );
 }
 
+/** Aviso suave mientras el servidor no contesta: la partida sigue en pantalla. */
+export function OfflineBar() {
+  return (
+    <div className="animate-pop fixed inset-x-0 top-3 z-50 mx-auto w-[min(92vw,26rem)] rounded-xl border-[3px] border-ink bg-sun px-4 py-2 text-center text-sm font-extrabold shadow-hard">
+      📡 Reconectando con la sala…
+    </div>
+  );
+}
+
 export function Confetti() {
   const pieces = Array.from({ length: 30 });
   const colors = ["#ffc83d", "#ff4b4b", "#3d7bff", "#1fbf6b", "#ff7ab8"];

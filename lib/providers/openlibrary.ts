@@ -47,14 +47,18 @@ export async function fetchAuthors(count: number): Promise<Character[]> {
 
   for (let attempt = 0; attempt < 3 && out.length < count; attempt++) {
     const subject = pick(SUBJECTS);
-    const offset = randomInt(0, 250);
+    const offset = randomInt(0, 90);
     const url =
       `https://openlibrary.org/search.json?q=subject%3A${subject}` +
       `&limit=50&offset=${offset}&sort=readinglog` +
       `&fields=title,author_name,author_key,first_publish_year,cover_i,ratings_count`;
     const res = await getJSON<{ docs: Doc[] }>(url, 12000);
+    // El listado viene ordenado por lecturas; además se pide que el libro tenga
+    // gente que lo haya valorado, para no sacar autores de nicho.
     const docs = shuffle(
-      (res.docs ?? []).filter((d) => d.author_name?.length && d.cover_i),
+      (res.docs ?? []).filter(
+        (d) => d.author_name?.length && d.cover_i && (d.ratings_count ?? 0) >= 5,
+      ),
     );
     for (const doc of docs) {
       if (out.length >= count) break;

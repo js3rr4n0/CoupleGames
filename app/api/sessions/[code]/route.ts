@@ -8,6 +8,7 @@ import {
   requirePlayer,
   revealHint,
   startGame,
+  askQuestion,
   submitAnswer,
   submitGuess,
   syncClock,
@@ -23,6 +24,7 @@ interface ActionBody {
   name?: string;
   value?: AnswerValue;
   text?: string;
+  questionId?: string;
   categories?: CategoryId[];
   roundSeconds?: number;
   roundsPerPlayer?: number;
@@ -95,8 +97,11 @@ export async function POST(
       case "start":
         await startGame(session, player);
         break;
+      case "ask":
+        askQuestion(session, player, body.text ?? "");
+        break;
       case "answer":
-        submitAnswer(session, player, body.value ?? "quiza");
+        submitAnswer(session, player, body.value ?? "quiza", body.questionId);
         break;
       case "guess":
         extra = submitGuess(session, player, body.text ?? "");

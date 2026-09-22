@@ -300,9 +300,13 @@ export async function fetchFromWiki(
       // get a stub. Keep the biggest ones of this category, then shuffle so the
       // same famous names do not come up every single game.
       const pages = Object.values(detail.query?.pages ?? {})
-        .filter((p) => (p.length ?? 0) >= 1200)
+        .filter((p) => (p.length ?? 0) >= 15000)
         .sort((a, b) => (b.length ?? 0) - (a.length ?? 0));
-      const candidates = shuffle(pages.slice(0, Math.max(6, count)));
+      const candidates = shuffle(
+      (pages.length ? pages : Object.values(detail.query?.pages ?? {}))
+        .filter((p) => (p.length ?? 0) >= 6000)
+        .slice(0, Math.max(6, count)),
+    );
 
       const parsedByPage = new Map<number, ParsedCategories>();
       for (const page of candidates) {

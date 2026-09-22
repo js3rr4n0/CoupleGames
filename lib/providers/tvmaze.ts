@@ -4,6 +4,7 @@ import { cached, getJSON, pick, randomInt, shuffle } from "./http";
 interface Show {
   id: number;
   name: string;
+  type: string;
   genres: string[];
   premiered: string | null;
   language: string | null;
@@ -13,6 +14,7 @@ interface Show {
 }
 
 interface CastEntry {
+  voice?: boolean;
   person: {
     id: number;
     name: string;
@@ -30,14 +32,21 @@ interface CastEntry {
 
 const PAGES = 12;
 
+/** El mazo de caras reales no quiere animación: ahí solo hay actores de voz. */
+function isLiveAction(show: Show): boolean {
+  return show.type !== "Animation" && !show.genres.includes("Anime");
+}
+
 async function popularShows(): Promise<Show[]> {
   const page = randomInt(0, PAGES);
   const shows = await cached(`tvmaze:shows:${page}`, 30 * 60_000, () =>
     getJSON<Show[]>(`https://api.tvmaze.com/shows?page=${page}`),
   );
-  const good = shows.filter(
-    (s) => (s.rating?.average ?? 0) >= 7 && s.weight >= 90,
-  );
+  // Se ordenan por tirón (weight) y nos quedamos con la cabecera de la página.
+  const good = shows
+    .filter((s) => (s.rating?.average ?? 0) >= 7.5 && s.weight >= 95)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 25);
   return good.length >= 3 ? good : shows;
 }
 
@@ -54,6 +63,8 @@ function showHints(show: Show): string[] {
   if (show.genres.length) hints.push(`Género: ${show.genres.join(", ")}`);
   const country = show.network?.country?.name;
   if (country) hints.push(`Es una producción de ${country}`);
+  if (show.network?.name) hints.push(`Se emitió en ${show.network.name}`);
+  if (show.rating?.average) hints.push(`La serie está valorada con un ${show.rating.average}`);
   return hints;
 }
 
@@ -61,9 +72,15 @@ function showHints(show: Show): string[] {
 export async function fetchActors(count: number): Promise<Character[]> {
   const out: Character[] = [];
   for (let attempt = 0; attempt < 4 && out.length < count; attempt++) {
-    const shows = await popularShows();
+    const shows = (await popularShows()).filter(isLiveAction);
+    if (!shows.length) continue;
     const show = pick(shows);
-    const cast = (await castOf(show)).filter((c) => c.person.image);
+    // El reparto viene ordenado por importancia: nos quedamos con la cabecera
+    // para que no salgan secundarios de una sola escena.
+    const cast = (await castOf(show))
+      // Sin doblaje: la cara del actor de voz no la reconoce nadie.
+      .filter((c) => c.person.image && !c.voice)
+      .slice(0, 6);
     for (const entry of shuffle(cast).slice(0, count - out.length)) {
       const birthYear = entry.person.birthday?.slice(0, 4);
       out.push({
@@ -92,9 +109,9 @@ export async function fetchTvCharacters(count: number): Promise<Character[]> {
   for (let attempt = 0; attempt < 4 && out.length < count; attempt++) {
     const shows = await popularShows();
     const show = pick(shows);
-    const cast = (await castOf(show)).filter(
-      (c) => c.character.image && c.character.name.split(" ").length <= 4,
-    );
+    const cast = (await castOf(show))
+      .filter((c) => c.character.image && c.character.name.split(" ").length <= 4)
+      .slice(0, 6);
     for (const entry of shuffle(cast).slice(0, count - out.length)) {
       out.push({
         id: `tvmaze-char-${entry.character.id}`,

@@ -11,10 +11,10 @@ import CluedoBoard from "./games/CluedoBoard";
 import MonopolioBoard from "./games/MonopolioBoard";
 import Notepad from "./Notepad";
 import RulesButton, { RulesList } from "./RulesPanel";
-import { Avatar, Badge, Button, Card, Confetti, ErrorBar, Logo } from "./ui";
+import { Avatar, Badge, Button, Card, Confetti, ErrorBar, Logo, OfflineBar } from "./ui";
 
 export default function Mesa({ code }: { code: string }) {
-  const { view, status, error, setError, busy, send, play } = useMesa(code);
+  const { view, status, error, setError, busy, offline, send, play } = useMesa(code);
   const [name, setName] = useState(recallName());
   const [copied, setCopied] = useState(false);
 
@@ -315,6 +315,7 @@ export default function Mesa({ code }: { code: string }) {
         )}
       </div>
 
+      {offline && <OfflineBar />}
       {error && <ErrorBar message={error} onClose={() => setError(null)} />}
     </main>
   );

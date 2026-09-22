@@ -7,6 +7,7 @@ interface Hero {
   powerstats: Record<string, number>;
   appearance: { race: string | null; gender: string | null };
   biography: {
+    fullName: string | null;
     publisher: string | null;
     alignment: string | null;
     firstAppearance: string | null;
@@ -42,7 +43,27 @@ export async function fetchSuperheroes(count: number): Promise<Character[]> {
     ),
   );
 
-  return shuffle(heroes.filter((h) => h.images?.lg && h.name.length <= 28))
+  // Los personajes famosos tienen la ficha completa; los de relleno vienen con
+  // guiones en casi todo, así que se mide cuánta información real traen.
+  const richness = (hero: Hero): number => {
+    const filled = (value: string | null | undefined) =>
+      value && value !== "-" && value !== "null" && !/^no .* found/i.test(value) ? 1 : 0;
+    return (
+      filled(hero.biography.fullName) +
+      filled(hero.biography.alterEgos) +
+      filled(hero.biography.firstAppearance) +
+      filled(hero.work.occupation) +
+      filled(hero.connections.groupAffiliation) +
+      filled(hero.appearance.race) +
+      (/(marvel|dc) comics/i.test(hero.biography.publisher ?? "") ? 2 : 0)
+    );
+  };
+
+  const known = heroes.filter(
+    (h) => h.images?.lg && h.name.length <= 28 && richness(h) >= 7,
+  );
+
+  return shuffle(known.length >= count ? known : heroes.filter((h) => h.images?.lg))
     .slice(0, count)
     .map((hero) => {
       const group = hero.connections.groupAffiliation

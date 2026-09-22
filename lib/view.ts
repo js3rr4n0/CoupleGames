@@ -3,6 +3,7 @@ import { MAX_HINTS } from "./game";
 import { maskName } from "./text";
 import type {
   AnswerEntry,
+  QuestionEntry,
   CategoryId,
   GameSession,
   GuessEntry,
@@ -46,11 +47,13 @@ export interface RoundView {
   actorName: string;
   actorEmoji: string;
   status: RoundStatus;
-  secondsLeft: number;
+  /** null cuando la ronda es de tiempo ilimitado. */
+  secondsLeft: number | null;
   totalSeconds: number;
   hintsUsed: number;
   hintsMax: number;
   answers: AnswerEntry[];
+  questions: QuestionEntry[];
   guesses: GuessEntry[];
   card: CardView;
   youGuess: boolean;
@@ -123,11 +126,15 @@ export function buildView(session: GameSession, playerId: string | null): Sessio
       actorName: actor?.name ?? "?",
       actorEmoji: actor?.emoji ?? "🎭",
       status: round.status,
-      secondsLeft: Math.max(0, Math.round((round.endsAt - now) / 1000)),
+      secondsLeft:
+        session.settings.roundSeconds === 0
+          ? null
+          : Math.max(0, Math.round((round.endsAt - now) / 1000)),
       totalSeconds: session.settings.roundSeconds,
       hintsUsed: round.hintsUsed,
       hintsMax: Math.min(MAX_HINTS, round.character.hints.length),
       answers: round.answers.slice(0, 12),
+      questions: round.questions.slice(0, 12),
       guesses: round.guesses.slice(0, 12),
       card,
       youGuess,

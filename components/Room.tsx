@@ -11,10 +11,10 @@ import Reveal from "./Reveal";
 import { HistoryList, Scoreboard } from "./Scoreboard";
 import type { SessionView } from "@/lib/view";
 import FlowerOverlay from "./FlowerOverlay";
-import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, Logo } from "./ui";
+import { Avatar, Badge, Button, Card, ErrorBar, FlowerNote, Logo, OfflineBar } from "./ui";
 
 export default function Room({ code }: { code: string }) {
-  const { view, playerId, status, error, setError, busy, act } = useSession(code);
+  const { view, playerId, status, error, setError, busy, offline, act } = useSession(code);
   const [copied, setCopied] = useState(false);
   const [flowerOpen, setFlowerOpen] = useState(true);
   // La pantalla completa se muestra una vez por visita a la sala.
@@ -131,6 +131,7 @@ export default function Room({ code }: { code: string }) {
         </p>
       )}
 
+      {offline && <OfflineBar />}
       {error && <ErrorBar message={error} onClose={() => setError(null)} />}
     </main>
   );

@@ -41,8 +41,15 @@ const GEN_ES: Record<string, string> = {
 };
 
 export async function fetchPokemon(count: number): Promise<Character[]> {
+  // Cuatro de cada cinco salen de las tres primeras generaciones: son las que
+  // reconoce cualquiera, aunque no juegue.
   const ids = shuffle(
-    Array.from({ length: 60 }, () => randomInt(1, 899)),
+    Array.from({ length: 60 }, () => {
+      const dice = Math.random();
+      if (dice < 0.8) return randomInt(1, 152); // los de siempre
+      if (dice < 0.95) return randomInt(152, 387);
+      return randomInt(387, 899);
+    }),
   ).slice(0, count);
 
   const results = await Promise.allSettled(
@@ -75,6 +82,7 @@ export async function fetchPokemon(count: number): Promise<Character[]> {
             : species.habitat
               ? `Su hábitat: ${species.habitat.name}`
               : "",
+          `Su color es ${species.color.name}`,
           flavor ? `De la Pokédex: ${flavor}` : "",
         ].filter(Boolean),
       };

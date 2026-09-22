@@ -18,10 +18,10 @@ export const EMOJIS = [
   "🦁", "🐸", "🦜", "🐳", "🦔", "🐰", "🦝", "🐝",
 ];
 
-export const MAX_HINTS = 3;
+export const MAX_HINTS = 6;
 const BASE_POINTS = 120;
-const HINT_COST = 20;
-const MIN_WIN_POINTS = 25;
+const HINT_COST = 15;
+const MIN_WIN_POINTS = 20;
 const HELPER_POINTS = 15;
 const MIN_DECK_BUFFER = 4;
 
@@ -144,8 +144,12 @@ export function updateSettings(
     if (!valid.length) throw new GameError("Elige al menos una categoría.");
     session.settings.categories = valid as CategoryId[];
   }
-  if (patch.roundSeconds)
-    session.settings.roundSeconds = Math.min(300, Math.max(30, Math.round(patch.roundSeconds)));
+  if (patch.roundSeconds !== undefined) {
+    // 0 significa sin límite de tiempo.
+    const seconds = Math.round(patch.roundSeconds);
+    session.settings.roundSeconds =
+      seconds === 0 ? 0 : Math.min(600, Math.max(30, seconds));
+  }
   if (patch.roundsPerPlayer)
     session.settings.roundsPerPlayer = Math.min(5, Math.max(1, Math.round(patch.roundsPerPlayer)));
   if (patch.targetPlayers)
@@ -207,8 +211,12 @@ function startRound(session: GameSession): void {
     actorId,
     character,
     startedAt: now,
-    endsAt: now + session.settings.roundSeconds * 1000,
+    endsAt:
+      session.settings.roundSeconds === 0
+        ? Number.MAX_SAFE_INTEGER
+        : now + session.settings.roundSeconds * 1000,
     answers: [],
+    questions: [],
     guesses: [],
     hintsUsed: 0,
     status: "live",
@@ -288,7 +296,10 @@ function finishRound(
     source: round.character.source,
     status,
     points: round.points,
-    seconds: Math.min(seconds, session.settings.roundSeconds),
+    seconds:
+      session.settings.roundSeconds === 0
+        ? seconds
+        : Math.min(seconds, session.settings.roundSeconds),
     hintsUsed: round.hintsUsed,
     guesses: round.guesses.length,
     at: Date.now(),
@@ -301,31 +312,66 @@ function finishRound(
 /** Rounds end on their own when the clock runs out, without server timers. */
 export function syncClock(session: GameSession): void {
   const round = session.round;
+  if (session.settings.roundSeconds === 0) return;
   if (session.phase === "playing" && round?.status === "live" && Date.now() >= round.endsAt) {
     finishRound(session, "timeout");
     saveSession(session);
   }
 }
 
+/** Quien adivina escribe su pregunta para que la vean en sus pantallas. */
+export function askQuestion(
+  session: GameSession,
+  player: Player,
+  rawText: string,
+): void {
+  const round = session.round;
+  if (!round || round.status !== "live")
+    throw new GameError("Ahora mismo no hay una ronda en juego.");
+  if (player.id !== round.actorId)
+    throw new GameError("Solo quien adivina puede preguntar.", 403);
+  const text = rawText.trim().replace(/\s+/g, " ").slice(0, 140);
+  if (text.length < 3) throw new GameError("Escribe una pregunta un poco más larga.");
+  round.questions.unshift({ id: newId("q"), text, at: Date.now(), answers: [] });
+  round.questions = round.questions.slice(0, 30);
+  saveSession(session);
+}
+
 export function submitAnswer(
   session: GameSession,
   player: Player,
   value: AnswerValue,
+  questionId?: string,
 ): void {
   const round = session.round;
   if (!round || round.status !== "live")
     throw new GameError("Ahora mismo no hay una ronda en juego.");
   if (player.id === round.actorId)
     throw new GameError("¡Tú eres quien adivina! Deja que el resto responda.");
-  round.answers.unshift({
+
+  const entry = {
     id: newId("a"),
     playerId: player.id,
     playerName: player.name,
     emoji: player.emoji,
     value,
     at: Date.now(),
-  });
-  round.answers = round.answers.slice(0, 40);
+  };
+
+  // Si hay una pregunta escrita, la respuesta se engancha a ella; si se está
+  // preguntando en voz alta, va al listado suelto de siempre.
+  const target =
+    (questionId && round.questions.find((q) => q.id === questionId)) ||
+    round.questions[0];
+  if (target) {
+    target.answers = [
+      entry,
+      ...target.answers.filter((answer) => answer.playerId !== player.id),
+    ];
+  } else {
+    round.answers.unshift(entry);
+    round.answers = round.answers.slice(0, 40);
+  }
   saveSession(session);
 }
 

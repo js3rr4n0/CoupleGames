@@ -34,7 +34,12 @@ export async function fetchStarWars(count: number): Promise<Character[]> {
 
   const byUrl = new Map(planets.map((p) => [p.url, p]));
 
-  return shuffle(people)
+  // Tres películas o más: los que cualquiera ubica sin pensar.
+  const iconic = people.filter((person) => person.films.length >= 3);
+  const known = iconic.length >= count
+    ? iconic
+    : people.filter((person) => person.films.length >= 2);
+  return shuffle(known.length >= count ? known : people)
     .slice(0, count)
     .map((p) => {
       const home = byUrl.get(p.homeworld);

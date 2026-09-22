@@ -49,6 +49,14 @@ export interface AnswerEntry {
   at: number;
 }
 
+/** Una pregunta escrita por quien adivina, con las respuestas que recibió. */
+export interface QuestionEntry {
+  id: string;
+  text: string;
+  at: number;
+  answers: AnswerEntry[];
+}
+
 export interface GuessEntry {
   id: string;
   text: string;
@@ -64,7 +72,9 @@ export interface Round {
   character: Character;
   startedAt: number;
   endsAt: number;
+  /** Respuestas sueltas: las de cuando se pregunta en voz alta. */
   answers: AnswerEntry[];
+  questions: QuestionEntry[];
   guesses: GuessEntry[];
   hintsUsed: number;
   status: RoundStatus;

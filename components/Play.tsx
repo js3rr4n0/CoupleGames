@@ -28,12 +28,13 @@ export default function Play({
   busy: boolean;
 }) {
   const round = view.round!;
-  const left = useCountdown(round.secondsLeft, round.status === "live");
+  const unlimited = round.secondsLeft === null;
+  const left = useCountdown(round.secondsLeft ?? 0, round.status === "live" && !unlimited);
 
   return round.youGuess ? (
-    <GuesserPanel view={view} act={act} busy={busy} left={left} />
+    <GuesserPanel view={view} act={act} busy={busy} left={left} unlimited={unlimited} />
   ) : (
-    <HelperPanel view={view} act={act} busy={busy} left={left} />
+    <HelperPanel view={view} act={act} busy={busy} left={left} unlimited={unlimited} />
   );
 }
 
@@ -42,16 +43,18 @@ function TurnBar({
   left,
   title,
   tone,
+  unlimited,
 }: {
   view: SessionView;
   left: number;
   title: string;
   tone: string;
+  unlimited: boolean;
 }) {
   const round = view.round!;
   return (
     <div className={`flex items-center gap-4 border-b-[3px] border-ink px-5 py-4 ${tone}`}>
-      <TimerBox left={left} total={round.totalSeconds} />
+      <TimerBox left={left} total={round.totalSeconds} unlimited={unlimited} />
       <div className="min-w-0">
         <p className="text-xs font-extrabold uppercase tracking-widest opacity-80">
           Ronda {view.roundsDone + 1} de {view.roundsTotal}
@@ -68,38 +71,70 @@ function TurnBar({
   );
 }
 
-function AnswersFeed({ view }: { view: SessionView }) {
-  const answers = view.round!.answers;
+function AnswerChip({ value }: { value: AnswerValue }) {
+  const style = ANSWERS[value];
+  return (
+    <span
+      className={`rounded-lg border-2 border-ink px-2 py-0.5 text-xs font-extrabold ${style.color}`}
+    >
+      {style.emoji} {style.label}
+    </span>
+  );
+}
+
+/** Las preguntas escritas con lo que contestó cada quien, y debajo las sueltas. */
+function QuestionsFeed({ view }: { view: SessionView }) {
+  const round = view.round!;
+  const { questions, answers } = round;
+
   return (
     <>
       <p className="text-xs font-extrabold uppercase tracking-widest text-ink-soft">
-        Lo que ha contestado el grupo
+        Preguntas y respuestas
       </p>
-      {answers.length === 0 ? (
+      {!questions.length && !answers.length ? (
         <p className="mt-3 rounded-xl border-[3px] border-dashed border-ink/30 p-4 text-sm font-semibold text-ink-soft">
-          Lanza la primera pregunta en voz alta: ¿soy una persona real?
+          Todavía no hay nada. Escribe una pregunta o lánzala en voz alta.
         </p>
       ) : (
-        <ul className="scroll-soft mt-3 flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
-          {answers.map((answer) => {
-            const style = ANSWERS[answer.value];
-            return (
-              <li
-                key={answer.id}
-                className="animate-pop flex items-center gap-2.5 rounded-xl border-[3px] border-ink bg-paper px-3 py-2"
-              >
-                <Avatar emoji={answer.emoji} size="sm" />
-                <span className="flex-1 truncate text-sm font-bold">
-                  {answer.playerName}
-                </span>
-                <span
-                  className={`rounded-lg border-2 border-ink px-2.5 py-1 text-xs font-extrabold ${style.color}`}
-                >
-                  {style.emoji} {style.label}
-                </span>
-              </li>
-            );
-          })}
+        <ul className="scroll-soft mt-3 flex max-h-72 flex-col gap-2 overflow-y-auto pr-1">
+          {questions.map((question, index) => (
+            <li
+              key={question.id}
+              className={`animate-pop rounded-xl border-[3px] border-ink p-3 ${
+                index === 0 ? "bg-sun" : "bg-paper"
+              }`}
+            >
+              <p className="font-display text-base leading-tight">{question.text}</p>
+              {question.answers.length ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {question.answers.map((answer) => (
+                    <span key={answer.id} className="flex items-center gap-1">
+                      <span className="text-sm">{answer.emoji}</span>
+                      <AnswerChip value={answer.value} />
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink-soft">
+                  esperando respuesta…
+                </p>
+              )}
+            </li>
+          ))}
+
+          {answers.map((answer) => (
+            <li
+              key={answer.id}
+              className="animate-pop flex items-center gap-2.5 rounded-xl border-[3px] border-ink bg-paper px-3 py-2"
+            >
+              <Avatar emoji={answer.emoji} size="sm" />
+              <span className="flex-1 truncate text-sm font-bold">
+                {answer.playerName}
+              </span>
+              <AnswerChip value={answer.value} />
+            </li>
+          ))}
         </ul>
       )}
     </>
@@ -111,21 +146,31 @@ function GuesserPanel({
   act,
   busy,
   left,
+  unlimited,
 }: {
   view: SessionView;
   act: Act;
   busy: boolean;
   left: number;
+  unlimited: boolean;
 }) {
   const round = view.round!;
   const card = round.card;
   const [guess, setGuess] = useState("");
+  const [question, setQuestion] = useState("");
   const [shake, setShake] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  async function ask(event: React.FormEvent) {
+    event.preventDefault();
+    if (question.trim().length < 3) return;
+    await act("ask", { text: question });
+    setQuestion("");
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -143,7 +188,13 @@ function GuesserPanel({
   return (
     <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <Card className="animate-rise overflow-hidden p-0">
-        <TurnBar view={view} left={left} title="Te toca adivinar" tone="bg-sun" />
+        <TurnBar
+          view={view}
+          left={left}
+          title="Te toca adivinar"
+          tone="bg-sun"
+          unlimited={unlimited}
+        />
 
         <div className="p-5 sm:p-6">
           <div
@@ -163,7 +214,20 @@ function GuesserPanel({
             </p>
           </div>
 
-          <form onSubmit={submit} className="mt-5 flex gap-2">
+          <form onSubmit={ask} className="mt-5 flex gap-2">
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Escribe tu pregunta: ¿soy una persona real?"
+              maxLength={140}
+              className="w-full rounded-xl border-[3px] border-ink bg-white px-4 py-3 font-semibold outline-none placeholder:font-normal placeholder:text-ink-soft/60"
+            />
+            <Button type="submit" variant="plain" disabled={busy} className="shrink-0">
+              Preguntar
+            </Button>
+          </form>
+
+          <form onSubmit={submit} className="mt-3 flex gap-2">
             <input
               ref={inputRef}
               value={guess}
@@ -185,7 +249,7 @@ function GuesserPanel({
               disabled={busy || hintsLeft <= 0}
               onClick={() => act("hint")}
             >
-              💡 Pedir pista · quedan {hintsLeft} (−20)
+              💡 Pedir pista · quedan {hintsLeft} (−15)
             </Button>
             <Button variant="quiet" disabled={busy} onClick={() => act("pass")}>
               🏳️ Me rindo
@@ -233,7 +297,7 @@ function GuesserPanel({
 
       <div className="space-y-5">
         <Card className="animate-rise p-5">
-          <AnswersFeed view={view} />
+          <QuestionsFeed view={view} />
         </Card>
         <Card className="p-5" tone="paper">
           <p className="font-display text-lg">Preguntas para arrancar</p>
@@ -254,11 +318,13 @@ function HelperPanel({
   act,
   busy,
   left,
+  unlimited,
 }: {
   view: SessionView;
   act: Act;
   busy: boolean;
   left: number;
+  unlimited: boolean;
 }) {
   const round = view.round!;
   const card = round.card;
@@ -271,6 +337,7 @@ function HelperPanel({
           left={left}
           title={`${round.actorEmoji} ${round.actorName} adivina`}
           tone="bg-sky text-white"
+          unlimited={unlimited}
         />
 
         <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr] sm:p-6">
@@ -305,14 +372,45 @@ function HelperPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 border-t-[3px] border-ink bg-paper-2 p-5">
+        <div className="border-t-[3px] border-ink bg-paper-2 p-5">
+          <div
+            className={`mb-3 rounded-xl border-[3px] border-ink p-3 ${
+              round.questions.length ? "bg-sun" : "border-dashed bg-transparent"
+            }`}
+          >
+            <p className="text-[11px] font-extrabold uppercase tracking-widest text-ink-soft">
+              {round.questions.length
+                ? `${round.actorName} pregunta`
+                : `${round.actorName} está preguntando en voz alta`}
+            </p>
+            <p className="font-display text-lg leading-tight">
+              {round.questions[0]?.text ?? "Contesta con los botones cuando pregunte."}
+            </p>
+            {round.questions[0]?.answers.length ? (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {round.questions[0].answers.map((answer) => (
+                  <span key={answer.id} className="flex items-center gap-1">
+                    <span className="text-sm">{answer.emoji}</span>
+                    <AnswerChip value={answer.value} />
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
           {(Object.keys(ANSWERS) as AnswerValue[]).map((value) => {
             const style = ANSWERS[value];
             return (
               <button
                 key={value}
                 disabled={busy}
-                onClick={() => act("answer", { value })}
+                onClick={() =>
+                  act("answer", {
+                    value,
+                    questionId: round.questions[0]?.id,
+                  })
+                }
                 className={`press rounded-xl border-[3px] border-ink py-5 font-display text-xl shadow-hard disabled:opacity-50 ${style.color}`}
               >
                 <span className="block text-3xl">{style.emoji}</span>
@@ -320,6 +418,7 @@ function HelperPanel({
               </button>
             );
           })}
+          </div>
         </div>
       </Card>
 
@@ -349,7 +448,7 @@ function HelperPanel({
           )}
         </Card>
         <Card className="p-5">
-          <AnswersFeed view={view} />
+          <QuestionsFeed view={view} />
         </Card>
       </div>
     </div>

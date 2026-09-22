@@ -6,7 +6,7 @@ import type { CategoryId } from "@/lib/types";
 import type { SessionView } from "@/lib/view";
 import { Avatar, Badge, Button, Card } from "./ui";
 
-const TIME_OPTIONS = [60, 90, 120, 180];
+const TIME_OPTIONS = [60, 90, 120, 180, 0];
 const ROUND_OPTIONS = [1, 2, 3, 4];
 
 export default function Lobby({
@@ -152,14 +152,15 @@ export default function Lobby({
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
                 2
               </span>
-              Pregunta en voz alta y el grupo contesta con los botones Sí / No /
-              Quizá.
+              Escribe la pregunta (o dila en voz alta) y el grupo contesta con
+              los botones Sí / No / Quizá.
             </li>
             <li className="flex gap-2">
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
                 3
               </span>
-              Hasta 3 pistas por ronda, a −20 puntos cada una.
+              Hasta 6 pistas por ronda, a −15 puntos cada una. El tiempo puede
+              ser ilimitado (∞).
             </li>
             <li className="flex gap-2">
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-ink bg-white font-display text-xs">
@@ -219,13 +220,14 @@ export default function Lobby({
                     type="button"
                     disabled={!isHost || busy}
                     onClick={() => act("settings", { roundSeconds: seconds })}
+                    title={seconds === 0 ? "Sin límite de tiempo" : `${seconds} segundos`}
                     className={`press h-11 flex-1 rounded-lg border-[3px] border-ink font-display text-sm ${
                       view.settings.roundSeconds === seconds
                         ? "bg-ink text-white"
                         : "bg-white"
                     }`}
                   >
-                    {seconds}s
+                    {seconds === 0 ? "∞" : `${seconds}s`}
                   </button>
                 ))}
               </div>

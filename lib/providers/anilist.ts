@@ -73,7 +73,7 @@ export async function fetchAnimeCharacters(count: number): Promise<Character[]> 
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ query: QUERY, variables: { page: randomInt(1, 18) } }),
+    body: JSON.stringify({ query: QUERY, variables: { page: randomInt(1, 9) } }),
     signal: AbortSignal.timeout(10000),
     cache: "no-store",
   });

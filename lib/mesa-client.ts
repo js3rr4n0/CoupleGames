@@ -49,17 +49,28 @@ export function useMesa(code: string) {
   const [status, setStatus] = useState<"loading" | "ready" | "missing">("loading");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const failures = useRef(0);
+  const everLoaded = useRef(false);
   const playerRef = useRef<string | null>(playerId);
 
   const refresh = useCallback(async () => {
     const query = playerRef.current ? `?playerId=${playerRef.current}` : "";
     const res = await fetch(`/api/rooms/${code}${query}`, { cache: "no-store" });
     if (res.status === 404) {
-      setStatus("missing");
+      // Un 404 suelto (servidor reiniciado, red que parpadea) no debe tirar la
+      // pantalla: solo se da la sala por perdida tras varios fallos seguidos.
+      failures.current += 1;
+      const tolerance = everLoaded.current ? 8 : 2;
+      if (failures.current >= tolerance) setStatus("missing");
+      else setOffline(true);
       return;
     }
     const data = (await res.json()) as MesaResult;
     if (data.view) {
+      failures.current = 0;
+      everLoaded.current = true;
+      setOffline(false);
       setView(data.view);
       setStatus("ready");
       if (playerRef.current && !data.view.you) {
@@ -71,12 +82,16 @@ export function useMesa(code: string) {
 
   useEffect(() => {
     let active = true;
-    void refresh();
+    void refresh().catch(() => undefined);
+    const onFail = () => {
+      failures.current += 1;
+      if (failures.current >= 2) setOffline(true);
+    };
     const timer = setInterval(() => {
       if (!active || document.hidden) return;
-      void refresh().catch(() => undefined);
+      void refresh().catch(onFail);
     }, POLL_MS);
-    const onFocus = () => void refresh().catch(() => undefined);
+    const onFocus = () => void refresh().catch(onFail);
     window.addEventListener("focus", onFocus);
     return () => {
       active = false;
@@ -123,5 +138,5 @@ export function useMesa(code: string) {
     [send],
   );
 
-  return { view, playerId, status, error, setError, busy, send, play, refresh };
+  return { view, playerId, status, error, setError, busy, offline, send, play, refresh };
 }

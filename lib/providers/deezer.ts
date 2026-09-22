@@ -41,7 +41,11 @@ export async function fetchArtists(count: number): Promise<Character[]> {
         `https://api.deezer.com/chart/${genre.id}/artists?limit=100`,
       ),
     );
-    const artists = shuffle(chart.data ?? []).slice(0, count - out.length);
+    // Solo la parte alta del top: más abajo empiezan los desconocidos.
+    const artists = shuffle((chart.data ?? []).slice(0, 40)).slice(
+      0,
+      count - out.length,
+    );
     for (const artist of artists) {
       let track: string | null = null;
       try {

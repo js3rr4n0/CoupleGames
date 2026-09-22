@@ -26,9 +26,10 @@ buscador, y quien adivina nunca puede ver su propia carta.
    cualquier móvil y aparece en el lobby al instante.
 3. **Por turnos, alguien adivina**: su personaje se muestra en las pantallas del
    resto y en la suya solo aparecen los huecos del nombre.
-4. Quien adivina **pregunta en voz alta** y el grupo responde con los botones
-   **Sí / No / Quizá**. Puede gastar hasta **3 pistas** (−20 puntos cada una)
-   antes de arriesgar un nombre.
+4. Quien adivina **escribe su pregunta** (o la dice en voz alta): aparece en la
+   pantalla del resto, que responde con los botones **Sí / No / Quizá**, y cada
+   respuesta queda pegada a su pregunta. Puede gastar hasta **6 pistas**
+   (−15 puntos cada una) antes de arriesgar un nombre.
 5. Acertar rápido da más puntos; el resto del grupo también suma por ayudar.
    Al terminar hay **podio, historial** y **revancha** con personajes nuevos.
 
@@ -75,6 +76,14 @@ Cada partida pide páginas, géneros y offsets **aleatorios**, mezcla las
 categorías en round-robin y descarta repetidos, así que dos partidas seguidas
 no comparten personajes. Si una API falla, el resto sigue alimentando el mazo.
 
+**Solo personajes principales.** Cada mazo filtra el relleno con la señal que
+tenga a mano: TVmaze da el reparto ordenado por importancia (y se descartan las
+series de animación, donde solo hay actores de voz), AniList ordena por
+favoritos, Deezer por el top, Disney exige un mínimo de apariciones en películas
+y series, los wikis miden el tamaño del artículo, Rick and Morty cuenta
+episodios, Star Wars películas y la API de superhéroes se mira cuánta ficha real
+trae cada uno. Pokémon tira sobre todo de la primera generación.
+
 Los dos mazos de animación leen la API estándar de MediaWiki que expone cada
 wiki de Fandom: se sortea una categoría de personajes, se quedan los artículos
 más largos (la señal más fiable de que el personaje es conocido) y las pistas se
@@ -83,7 +92,9 @@ categorías son películas de verdad y cuáles son solo etiquetas.
 
 ### Puntuación
 
-- Acertar: `120 − segundos usados − 20 × pistas`, con un mínimo de 25 puntos.
+- Acertar: `120 − segundos usados − 15 × pistas`, con un mínimo de 20 puntos.
+- Las rondas pueden ser de 60, 90, 120 o 180 segundos, o **sin límite (∞)** para
+  jugar sin reloj.
 - El resto del grupo gana 15 puntos por ronda acertada (es cooperativo).
 - Rendirse o quedarse sin tiempo: 0 puntos, y se revela el personaje.
 - El historial guarda todas las rondas de todas las partidas de la sala.
